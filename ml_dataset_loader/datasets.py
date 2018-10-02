@@ -4,6 +4,7 @@ import os
 import re
 import sys
 import tarfile
+import zipfile
 
 import numpy as np
 import pandas as pd
@@ -107,27 +108,26 @@ def get_higgs_sampled(num_rows=None):
 get_epsilon_url = 'https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/binary/'
 
 
-def read_libsvm(filename, n_samples):
-    X = np.zeros((n_samples, 2000))
+def read_libsvm(file_obj, n_samples, n_features):
+    X = np.zeros((n_samples, n_features))
     y = np.zeros((n_samples,))
     
     counter = 0
     
-    with bz2.BZ2File(filename, 'r') as f:
-        regexp = re.compile(r'\d+:(-?\d+)')
-        
-        for line in tqdm(f):
-            line = regexp.sub('\g<1>', line)
-            line = line.split(' ')
-            line[-1] = line[-1][:-1] # remove \n
+    regexp = re.compile(r'[A-Za-z0-9]+:(-?\d+)')
+    
+    for line in tqdm(file_obj):
+        line = regexp.sub('\g<1>', line)
+        line = line.split(' ')
+        line[-1] = line[-1][:-1] # remove \n
 
-            y[counter] = int(line[0] == '1')
-            X[counter] = np.array(line[1:], dtype=np.float32)
-            if counter < 10:
-                print(y)
-                print(X[counter])
-        
-            counter += 1
+        y[counter] = int(line[0] == '1')
+        X[counter] = np.array(line[1:], dtype=np.float32)
+        if counter < 5:
+            print(y)
+            print(X[counter])
+    
+        counter += 1
             
     assert counter == n_samples
     
@@ -146,8 +146,12 @@ def get_epsilon(num_rows=None):
             print('done')
             
     print('Processing')
-    X_train, y_train = read_libsvm(filename_train, n_samples=400000)
-    X_test, y_test = read_libsvm(filename_test, n_samples=100000)
+    
+    with bz2.BZ2File(filename_train, 'r') as f_train:
+        X_train, y_train = read_libsvm(f_train, n_samples=400000, n_features=2000)
+
+    with bz2.BZ2File(filename_test, 'r') as f_test:
+        X_test, y_test = read_libsvm(f_test, n_samples=100000, n_features=2000)
     
     X_train = np.vstack((X_train, X_test))
     y_train = np.hstack((y_train, y_test))
@@ -236,6 +240,60 @@ def get_year(num_rows=None):
     y = year.iloc[:, 0].values
     return X, y
 
+
+get_msrank_url = "https://8kmjpq.dm.files.1drv.com/y4mzXMitOmJ6VWQwGXSa_VpvPeAeRlN4q3seUUeQsKWXdTlqbjH1Q_tSPp_liwgiXx8-G7Zc2Goc_TL5Q8KwbHVgzR1TD1KLU_pbRkIbno1TTDuZzF3ZsnBlRfLpDZqAlcgDrKqhmVMHiNELGL9mMGaC5sbgwOy2tKSe1vzbn07VPZQbejLMvfkNO_-Pl3YQafuhs62E6VwVVSKDEprXOGz9g/MSLR-WEB10K.zip?download&psid=1" # pylint: disable=line-too-long
+
+
+def _make_gen(reader):
+    b = reader(1024 * 1024)
+    while b:
+        yield b
+        b = reader(1024*1024)
+
+def count_lines(filename):
+    with open(filename, 'rb') as f:
+        f_gen = _make_gen(f.raw.read)
+        return sum( buf.count(b'\n') for buf in f_gen )
+
+
+@mem.cache
+def get_msrank():
+    """
+    Microsoft learning to rank dataset
+
+    1200192 total samples
+    137 features (including query id)
+
+    :return X,y
+    """
+
+    filename = 'msrank.zip'
+    if not os.path.exists(filename):
+        urlretrieve(get_msrank_url, filename)
+
+    dirname = 'MSLR-WEB10K'
+    if not os.path.exists(dirname):
+        zip_ref = zipfile.ZipFile(filename, 'r')
+        zip_ref.extractall(dirname)
+        zip_ref.close()
+
+    sets = []
+    labels = []
+    n_features = 137
+
+    for set_name in ['train.txt', 'vali.txt', 'test.txt']:
+        file_name = os.path.join(dirname, 'Fold1', set_name)
+
+        n_samples = count_lines(train_file)
+        X, y = read_libsvm(file_name, n_features)
+        
+        sets.append(X)
+        labels.append(y)
+
+    X = np.vstack(sets)
+    y = np.hstack(labels)
+
+    return X, y
 
 get_url_url = 'https://archive.ics.uci.edu/ml/machine-learning-databases/url/url_svmlight.tar.gz'  # pylint: disable=line-too-long
 
