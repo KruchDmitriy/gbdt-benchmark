@@ -105,34 +105,34 @@ def get_higgs_sampled(num_rows=None):
 
     return X[ids], y[ids]
 
+
 get_epsilon_url = 'https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/binary/'
 
 
 def read_libsvm(file_obj, n_samples, n_features):
     X = np.zeros((n_samples, n_features))
     y = np.zeros((n_samples,))
-    
+
     counter = 0
-    
-    regexp = re.compile(r'[A-Za-z0-9]+:(-?\d+)')
-    
+
+    regexp = re.compile(r'[A-Za-z0-9]+:(-?\d*\.?\d+)')
+
     for line in tqdm(file_obj):
         line = regexp.sub('\g<1>', line)
-        line = line.split(' ')
-        line[-1] = line[-1][:-1] # remove \n
+        line = line.rstrip(" \n\r").split(' ')
 
-        y[counter] = int(line[0] == '1')
-        X[counter] = np.array(line[1:], dtype=np.float32)
+        y[counter] = int(line[0])
+        X[counter] = map(float, line[1:])
         if counter < 5:
             print(y)
             print(X[counter])
-    
+
         counter += 1
-            
+
     assert counter == n_samples
-    
+
     return np.array(X, dtype=np.float32), np.array(y, dtype=np.int)
-    
+
 
 @mem.cache
 def get_epsilon(num_rows=None):
@@ -144,28 +144,28 @@ def get_epsilon(num_rows=None):
             print('Downloading ' + filename)
             urlretrieve(get_epsilon_url + filename, filename)
             print('done')
-            
+
     print('Processing')
-    
+
     with bz2.BZ2File(filename_train, 'r') as f_train:
         X_train, y_train = read_libsvm(f_train, n_samples=400000, n_features=2000)
 
     with bz2.BZ2File(filename_test, 'r') as f_test:
         X_test, y_test = read_libsvm(f_test, n_samples=100000, n_features=2000)
-    
+
     X_train = np.vstack((X_train, X_test))
     y_train = np.hstack((y_train, y_test))
     y_train = (y_train + 1) * 0.5
     y_train.astype(int)
-    
+
     return X_train, y_train
 
 @mem.cache
 def get_epsilon_sampled(num_rows=None):
     X, y = get_epsilon()
-    
+
     feat_ids = np.random.choice(X.shape[1], 28, replace=False)
-    
+
     return X[:,feat_ids], y
 
 @mem.cache
@@ -241,7 +241,7 @@ def get_year(num_rows=None):
     return X, y
 
 
-get_msrank_url = "https://8kmjpq.dm.files.1drv.com/y4mzXMitOmJ6VWQwGXSa_VpvPeAeRlN4q3seUUeQsKWXdTlqbjH1Q_tSPp_liwgiXx8-G7Zc2Goc_TL5Q8KwbHVgzR1TD1KLU_pbRkIbno1TTDuZzF3ZsnBlRfLpDZqAlcgDrKqhmVMHiNELGL9mMGaC5sbgwOy2tKSe1vzbn07VPZQbejLMvfkNO_-Pl3YQafuhs62E6VwVVSKDEprXOGz9g/MSLR-WEB10K.zip?download&psid=1" # pylint: disable=line-too-long
+get_msrank_url = "https://storage.mds.yandex.net/get-devtools-opensource/471749/msrank.tar.gz" # pylint: disable=line-too-long
 
 
 def _make_gen(reader):
@@ -252,7 +252,7 @@ def _make_gen(reader):
 
 def count_lines(filename):
     with open(filename, 'rb') as f:
-        f_gen = _make_gen(f.raw.read)
+        f_gen = _make_gen(f.read)
         return sum( buf.count(b'\n') for buf in f_gen )
 
 
@@ -267,26 +267,27 @@ def get_msrank():
     :return X,y
     """
 
-    filename = 'msrank.zip'
+    filename = 'msrank.tar.gz'
     if not os.path.exists(filename):
         urlretrieve(get_msrank_url, filename)
 
-    dirname = 'MSLR-WEB10K'
+    dirname = 'MSRank'
     if not os.path.exists(dirname):
-        zip_ref = zipfile.ZipFile(filename, 'r')
-        zip_ref.extractall(dirname)
-        zip_ref.close()
+        tar = tarfile.open(filename, "r:gz")
+        tar.extractall()
+        tar.close()
 
     sets = []
     labels = []
     n_features = 137
 
     for set_name in ['train.txt', 'vali.txt', 'test.txt']:
-        file_name = os.path.join(dirname, 'Fold1', set_name)
+        file_name = os.path.join(dirname, set_name)
 
-        n_samples = count_lines(train_file)
-        X, y = read_libsvm(file_name, n_features)
-        
+        n_samples = count_lines(file_name)
+        with open(file_name, 'r') as file_obj:
+            X, y = read_libsvm(file_obj, n_samples, n_features)
+
         sets.append(X)
         labels.append(y)
 

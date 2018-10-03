@@ -52,22 +52,6 @@ class Experiment:
                 print('Timing: ' + str(elapsed) + ' sec')
 
 
-DATASETS = {
-    "year-msd": Experiment(data_loader.get_year, "YearPredictionMSD", "Regression", "RMSE"),
-    "syntetic": Experiment(data_loader.get_synthetic_regression, "Synthetic", "Regression", "RMSE"),
-    "cover-type": Experiment(data_loader.get_cover_type, "Cover Type", "Multiclass", "Accuracy"),
-    "epsilon": Experiment(data_loader.get_epsilon, "Epsilon", "Classification", "Accuracy"),
-    "higgs": Experiment(data_loader.get_higgs, "Higgs", "Classification", "Accuracy"),
-    "bosch": Experiment(data_loader.get_bosch, "Bosch", "Classification", "Accuracy"),
-    "airline": Experiment(data_loader.get_airline, "Airline", "Classification", "Accuracy"),
-    "higgs-sampled": Experiment(data_loader.get_higgs_sampled, "Higgs", "Classification", "Accuracy"),
-    "epsilon-sampled": Experiment(data_loader.get_epsilon_sampled, "Epsilon", "Classification", "Accuracy"),
-    "synthetic-classification": Experiment(data_loader.get_synthetic_classification, "Synthetic2", "Classification", "Accuracy"),
-    "msrank": Experiment(data_loader.get_msrank, "MSRank", "Regression", "RMSE"),
-    "msrank-classification": Experiment(data_loader.get_msrank, "MSRank", "Multiclass", "Accuracy")
-}
-
-
 LEARNERS = {
     "xgb": XGBoostLearner,
     "lgb": LightGBMLearner,
@@ -108,4 +92,3 @@ if __name__ == '__main__':
     for experiment in experiments:
     	print(experiment.name)
     	experiment.run(args.use_gpu, experiment_learners, params_grid, args.eval_on_train, args.out_dir)
-

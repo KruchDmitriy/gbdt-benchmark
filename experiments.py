@@ -61,6 +61,6 @@ DATASETS = {
     "higgs-sampled": Experiment(data_loader.get_higgs_sampled, "Higgs", "Classification", "Accuracy"),
     "epsilon-sampled": Experiment(data_loader.get_epsilon_sampled, "Epsilon", "Classification", "Accuracy"),
     "synthetic-classification": Experiment(data_loader.get_synthetic_classification, "Synthetic2", "Classification", "Accuracy"),
-    "msrank": Experiment(data_loader.get_msrank, "MSRank", "Regression", "RMSE"),
-    "msrank-classification": Experiment(data_loader.get_msrank, "MSRank", "Multiclass", "Accuracy")
+    "msrank": Experiment(data_loader.get_msrank, "MSRank-RMSE", "Regression", "RMSE"),
+    "msrank-classification": Experiment(data_loader.get_msrank, "MSRank-MultiClass", "Multiclass", "Accuracy")
 }
