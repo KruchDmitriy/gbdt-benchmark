@@ -1,3 +1,5 @@
+import os
+
 from sklearn.model_selection import train_test_split, ParameterGrid
 
 import ml_dataset_loader.datasets as data_loader
@@ -41,7 +43,7 @@ class Experiment:
             for params in ParameterGrid(params_grid):
                 print(params)
 
-                log_dirname = os.path.join(out_dir, experiment.name, algorithm_name)
+                log_dirname = os.path.join(out_dir, self.name, algorithm_name)
                 if eval_on_train:
                     elapsed = learner.run(params, log_dirname)
                 else:

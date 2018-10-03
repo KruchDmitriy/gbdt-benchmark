@@ -1,62 +1,9 @@
 import argparse
 import json
+import os
 
 from learners import *
 from experiments import *
-
-
-class Data:
-    def __init__(self, X, y, name, task, metric, train_size=0.9):
-        assert train_size > 0. and train_size < 1.
-
-        test_size = 1. - train_size
-        self.name = name
-        self.task = task
-        self.metric = metric
-
-        if 'msrank' in name:
-            self.X_train = np.vstack([X[0], X[1]])
-            self.X_test = X[2]
-
-            self.y_train = np.hstack([y[0], y[1]])
-            self.y_test = y[2]
-        else:
-            self.X_train, self.X_test, self.y_train, self.y_test = \
-                train_test_split(X, y, test_size=test_size, random_state=0)
-
-        if task == 'Classification':
-            self.y_train = self.y_train.astype(int)
-            self.y_test = self.y_test.astype(int)
-
-
-class Experiment:
-    def __init__(self, data_func, name, task, metric):
-        self.data_func = data_func
-        self.name = name
-        self.task = task
-        self.metric = metric
-
-    def run(self, use_gpu, learners, params_grid, eval_on_train, out_dir):
-        X, y = self.data_func()
-        data = Data(X, y, self.name, self.task, self.metric)
-
-        device_type = 'GPU' if use_gpu else 'CPU'
-
-        for LearnerType in learners:
-            learner = LearnerType(data, use_gpu, eval_on_train)
-            algorithm_name = learner.name() + '-' + device_type
-            print('Started to train ' + algorithm_name)
-
-            for params in ParameterGrid(params_grid):
-                print(params)
-
-                log_dirname = os.path.join(out_dir, experiment.name, algorithm_name)
-                if eval_on_train:
-                    elapsed = learner.run(params, log_dirname)
-                else:
-                    elapsed = learner.run(params, log_dirname, data)
-
-                print('Timing: ' + str(elapsed) + ' sec')
 
 
 LEARNERS = {
@@ -77,8 +24,8 @@ if __name__ == '__main__':
     parser.add_argument('--datasets', nargs='+', choices=DATASETS.keys(), required=True)
     parser.add_argument('--use-gpu', action='store_true')
     parser.add_argument('--iterations', type=int, required=True)
-    parser.add_argument('--params-grid', default=None, help='path to json file, each key corresponds to learner parameter,\
-            e.g. max_depth, and list of values to run in experiment')
+    parser.add_argument('--params-grid', default=None, help='path to json file, each key corresponds'
+            ' to learner parameter e.g. max_depth, and list of values to run in experiment')
     parser.add_argument('--eval-on-train', default=True, help='eval test metrics during training')
     parser.add_argument('-o', '--out-dir', default='results')
     args = parser.parse_args()
