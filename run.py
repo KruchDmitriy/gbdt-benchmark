@@ -14,8 +14,15 @@ class Data:
         self.task = task
         self.metric = metric
 
-        self.X_train, self.X_test, self.y_train, self.y_test = \
-            train_test_split(X, y, test_size=test_size, random_state=0)
+        if 'msrank' in name:
+            self.X_train = np.vstack([X[0], X[1]])
+            self.X_test = X[2]
+
+            self.y_train = np.hstack([y[0], y[1]])
+            self.y_test = y[2]
+        else:
+            self.X_train, self.X_test, self.y_train, self.y_test = \
+                train_test_split(X, y, test_size=test_size, random_state=0)
 
         if task == 'Classification':
             self.y_train = self.y_train.astype(int)

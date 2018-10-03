@@ -291,10 +291,7 @@ def get_msrank():
         sets.append(X)
         labels.append(y)
 
-    X = np.vstack(sets)
-    y = np.hstack(labels)
-
-    return X, y
+    return sets, labels
 
 get_url_url = 'https://archive.ics.uci.edu/ml/machine-learning-databases/url/url_svmlight.tar.gz'  # pylint: disable=line-too-long
 
