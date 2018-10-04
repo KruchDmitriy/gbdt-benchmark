@@ -1,4 +1,5 @@
 import os
+import numpy as np
 
 from sklearn.model_selection import train_test_split, ParameterGrid
 
@@ -14,7 +15,7 @@ class Data:
         self.task = task
         self.metric = metric
 
-        if 'msrank' in name:
+        if 'MSRank' in name:
             self.X_train = np.vstack([X[0], X[1]])
             self.y_train = np.hstack([y[0], y[1]])
 
