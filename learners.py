@@ -217,6 +217,8 @@ class LightGBMLearner(Learner):
                 params['metric'] = 'binary_error'
             elif data.task == 'Multiclass':
                 params['metric'] = 'multi_error'
+            elif data.task == 'Regression':
+                params['metric'] = 'rmse'
 
         self.lgb_train = lgb.Dataset(data.X_train, data.y_train)
         self.lgb_eval = lgb.Dataset(data.X_test, data.y_test, reference=self.lgb_train)
