@@ -14,7 +14,7 @@ class Data:
         self.task = task
         self.metric = metric
 
-        if 'msrank' in name:
+        if 'MSRank' in name:
             self.X_train = np.vstack([X[0], X[1]])
             self.y_train = np.hstack([y[0], y[1]])
 
