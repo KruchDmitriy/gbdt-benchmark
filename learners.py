@@ -168,7 +168,7 @@ class XGBoostLearner(Learner):
 
         if eval_on_train:
             if data.metric == 'Accuracy':
-                params['eval_metric'] = 'error'
+                params['eval_metric'] = 'error' if data.task == 'Classification' else 'merror'
 
         self.dtrain = xgb.DMatrix(data.X_train, data.y_train)
         self.dtest = xgb.DMatrix(data.X_test, data.y_test)
