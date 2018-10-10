@@ -75,7 +75,7 @@ def plot_quality(tracks, from_iter, to_iter, figsize=FIGURE_SIZE, title=None, sa
         lines.append(line)
         names.append(str(track))
 
-    plt.legend(lines, names)
+    plt.legend(lines, names, prop={'size': 12})
 
     if os.path.exists(save_path):
         print('WARNING: file ' + save_path + ' already exists')
@@ -134,7 +134,7 @@ def plot_quality_vs_time(tracks, best_quality, low_percent=0.8, num_bins=100,
         error_plus = np.array(time_q2) - np.array(time_median)
         error_minus = np.array(time_median) - np.array(time_min)
 
-        x_values = np.array(x_values) - (float(i) - 1.) * up_percent / num_bins * 0.5
+        x_values = np.array(x_values) - (float(i) - 1.) * up_percent / num_bins / 4.
         x_values = 1. - x_values
 
         plt.errorbar(x=x_values, y=time_median, yerr=[error_minus, error_plus], fmt='o-', barsabove=True,

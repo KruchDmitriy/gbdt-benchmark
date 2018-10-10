@@ -35,6 +35,12 @@ class Track:
             if time_series[i] - time_series[i - 1] < 0.:
                 time_series[i:] = time_series[i:] + 60.
 
+        dur_series = time_series[-1] - time_series[0]
+        diff_elapsed_time = np.abs(dur_series - duration)
+        if diff_elapsed_time > 100:
+            print(parameters_str)
+            print('WARNING: difference ' + str(diff_elapsed_time) + ' in calculated duration may indicate broken log.')
+
         self.time_series = time_series
         assert(np.all(self.time_series - self.time_series[0] >= 0.))
 
@@ -86,6 +92,8 @@ class Track:
         return np.min(self.scores)
 
 
+TASK_TYPES_ACCURACY = ['Classification', 'Multiclass']
+
 def parse_log(algorithm_name, task_type, file_name, iterations):
     time_series = []
     values = []
@@ -100,7 +108,7 @@ def parse_log(algorithm_name, task_type, file_name, iterations):
             first_line = file_content[:first_line_idx]
             header = first_line.split('\t')
 
-            if task_type == 'Classification':
+            if task_type in TASK_TYPES_ACCURACY:
                 column_idx = header.index('Accuracy')
             elif task_type == 'Regression':
                 column_idx = header.index('RMSE')
@@ -114,7 +122,7 @@ def parse_log(algorithm_name, task_type, file_name, iterations):
             for match in matches:
                 value = float(match[column_idx])
 
-                if task_type == 'Classification':
+                if task_type in TASK_TYPES_ACCURACY:
                     value = 1. - value # Error, not accuracy
 
                 values.append(value)
@@ -136,6 +144,8 @@ def parse_log(algorithm_name, task_type, file_name, iterations):
                     metric = match[2]
                     assert metric == 'binary_error' and algorithm == 'lightgbm'\
                         or metric == 'eval-error' and algorithm == 'xgboost'
+                elif task_type == 'Multiclass' and i == 0:
+                    raise NotImplemented()
 
                 values.append(float(match[3]))
 
@@ -171,7 +181,10 @@ def read_results(dir_name):
                 continue
 
             iterations = int(iterations_str[0])
-            payload = parse_log(algorithm_name, task_type, path, iterations)
+            try:
+                payload = parse_log(algorithm_name, task_type, path, iterations)
+            except Exception as e:
+                print('Log for ' + path + ' is broken: ' + str(e))
 
             if payload is None:
                 continue
