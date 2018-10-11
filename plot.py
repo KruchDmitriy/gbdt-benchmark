@@ -1,13 +1,11 @@
 import argparse
 import json
-import numpy as np
 import os
 
+import numpy as np
 from matplotlib import pyplot as plt
-from sklearn.model_selection import ParameterGrid
 
-from log_parser import Track, read_results
-
+from log_parser import read_results
 
 FONT_DICT = {'fontsize': 20}
 FIGURE_SIZE = (10, 5)
@@ -86,7 +84,6 @@ def plot_quality(tracks, from_iter, to_iter, figsize=FIGURE_SIZE, title=None, sa
 
 def plot_quality_vs_time(tracks, best_quality, low_percent=0.8, num_bins=100,
                          figsize=FIGURE_SIZE, title=None, save_path='time_distr.png'):
-
     fig = plt.figure(figsize=figsize)
 
     if title is not None:
@@ -94,9 +91,6 @@ def plot_quality_vs_time(tracks, best_quality, low_percent=0.8, num_bins=100,
 
     plt.xlabel('Quality (%)', FONT_DICT)
     plt.ylabel('Time to obtain (sec)', FONT_DICT)
-
-    lines = []
-    min_lines = []
 
     algs = tracks.keys()
     up_percent = 1. - low_percent
@@ -129,7 +123,6 @@ def plot_quality_vs_time(tracks, best_quality, low_percent=0.8, num_bins=100,
                 time_min.append(np.min(times))
 
                 x_values.append(float(k) / num_bins * up_percent)
-
 
         error_plus = np.array(time_q2) - np.array(time_median)
         error_minus = np.array(time_median) - np.array(time_min)
@@ -193,8 +186,8 @@ if __name__ == '__main__':
     parser.add_argument('-f', '--fig-size', nargs=2, type=int, default=FIGURE_SIZE)
     parser.add_argument('-o', '--out-dir', default='plots')
     parser.add_argument('--params-cases', help='draw plots only with those params (tracks filtering)'
-            ' path to json file, each line corresponds to learner parameter (e.g. max_depth) and list of its values')
-
+                                               ' path to json file, each line corresponds to learner '
+                                               'parameter (e.g. max_depth) and list of its values')
     parser.add_argument('--from-iter', type=int, default=0, help='only custom, best modes')
     parser.add_argument('--to-iter', type=int, default=None, help='only custom, best modes')
     parser.add_argument('--low-percent', type=float, default=0.9, help='only quality-vs-time mode')
@@ -215,13 +208,13 @@ if __name__ == '__main__':
         print(best_quality)
 
         plot_quality_vs_time(tracks, best_quality=best_quality, low_percent=args.low_percent, figsize=args.fig_size,
-            num_bins=args.num_bins, save_path=os.path.join(args.out_dir, 'quality_vs_time.png'))
+                             num_bins=args.num_bins, save_path=os.path.join(args.out_dir, 'quality_vs_time.png'))
 
     if args.type == 'best':
         best_tracks = get_best(tracks, top=args.top)
 
         plot_quality(best_tracks, args.from_iter, args.to_iter, figsize=args.fig_size,
-            title=args.title, save_path=os.path.join(args.out_dir, 'best_quality.png'))
+                     title=args.title, save_path=os.path.join(args.out_dir, 'best_quality.png'))
 
     if args.type == 'custom':
         plot_quality(tracks, args.from_iter, args.to_iter,
@@ -230,4 +223,4 @@ if __name__ == '__main__':
 
     if args.type == 'time-per-iter':
         plot_time_per_iter(tracks, figsize=args.fig_size, title=args.title,
-                save_path=os.path.join(args.out_dir, 'time_per_iter.png'))
+                           save_path=os.path.join(args.out_dir, 'time_per_iter.png'))

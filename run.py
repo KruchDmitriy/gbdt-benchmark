@@ -1,10 +1,8 @@
 import argparse
 import json
-import os
 
-from learners import *
 from experiments import *
-
+from learners import *
 
 LEARNERS = {
     "xgb": XGBoostLearner,
@@ -25,8 +23,8 @@ if __name__ == '__main__':
     parser.add_argument('--use-gpu', action='store_true')
     parser.add_argument('--iterations', type=int, required=True)
     parser.add_argument('--params-grid', default=None, help='path to json file, each key corresponds'
-            ' to learner parameter e.g. max_depth, and list of values to run in experiment')
-    parser.add_argument('--eval-on-train', default=True, help='eval test metrics during training')
+                                                            ' to learner parameter e.g. max_depth, and'
+                                                            ' list of values to run in experiment')
     parser.add_argument('-o', '--out-dir', default='results')
     args = parser.parse_args()
 
@@ -34,7 +32,7 @@ if __name__ == '__main__':
     experiments = _get_all_values_from_subset(DATASETS, args.datasets)
 
     params_grid = {
-    	"iterations": [args.iterations]
+        "iterations": [args.iterations]
     }
 
     if args.params_grid:
@@ -42,7 +40,6 @@ if __name__ == '__main__':
             grid = json.load(f)
         params_grid.update(grid)
 
-
     for experiment in experiments:
-    	print(experiment.name)
-    	experiment.run(args.use_gpu, experiment_learners, params_grid, args.eval_on_train, args.out_dir)
+        print(experiment.name)
+        experiment.run(args.use_gpu, experiment_learners, params_grid, args.eval_on_train, args.out_dir)

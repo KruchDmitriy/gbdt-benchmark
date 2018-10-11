@@ -6,8 +6,8 @@ from collections import namedtuple
 from experiments import DATASETS
 
 
-ALGORITHMS = [method + '-' + device_type\
-              for device_type in ['CPU', 'GPU']\
+ALGORITHMS = [method + '-' + device_type
+              for device_type in ['CPU', 'GPU']
               for method in ['catboost', 'xgboost', 'lightgbm']]
 
 TIME_REGEX = r'Time: \[\s*(\d+\.?\d*)\s*\]\t'
@@ -93,39 +93,50 @@ class Track:
 
 
 TASK_TYPES_ACCURACY = ['Classification', 'Multiclass']
+METRIC_NAME = {
+    'lightgbm': {'Regression': 'rmse', 'Classification': 'binary_error', 'Multiclass': 'multi_error'},
+    'xgboost': {'Regression': 'eval-rmse', 'Classification': 'eval-error', 'Multiclass': 'eval-merror'},
+    'catboost': {'Regression': 'RMSE', 'Classification': 'Accuracy', 'Multiclass': 'Accuracy'}
+}
+
+
+def parse_catboost_log(test_error_file, task_type, iterations):
+    values = []
+    with open(test_error_file) as metric_log:
+        file_content = metric_log.read()
+
+        first_line_idx = file_content.find('\n')
+        first_line = file_content[:first_line_idx]
+        header = first_line.split('\t')
+
+        column_idx = header.index(METRIC_NAME['catboost'][task_type])
+        regex = LOG_LINE_REGEX['catboost-tsv']
+        matches = regex.findall(file_content)
+
+        if len(matches) != int(iterations):
+            print('WARNING: Broken log file (num matches not equal num iterations): ' + test_error_file)
+
+        for match in matches:
+            value = float(match[column_idx])
+
+            if task_type in TASK_TYPES_ACCURACY:
+                # Convert to error
+                value = 1. - value
+
+            values.append(value)
+
+    return values
+
 
 def parse_log(algorithm_name, task_type, file_name, iterations):
     time_series = []
     values = []
-    algorithm = algorithm_name[:-4]
+    algorithm = os.path.splitext(algorithm_name)[0]
 
     if algorithm == 'catboost':
-        catboost_tsv_file = os.path.join(file_name[:-4], 'test_error.tsv')
-        with open(catboost_tsv_file) as metric_log:
-            file_content = metric_log.read()
-
-            first_line_idx = file_content.find('\n')
-            first_line = file_content[:first_line_idx]
-            header = first_line.split('\t')
-
-            if task_type in TASK_TYPES_ACCURACY:
-                column_idx = header.index('Accuracy')
-            elif task_type == 'Regression':
-                column_idx = header.index('RMSE')
-
-            regex = LOG_LINE_REGEX['catboost-tsv']
-            matches = regex.findall(file_content)
-
-            if len(matches) != int(iterations):
-                print('WARNING: Broken log file ' + catboost_tsv_file)
-
-            for match in matches:
-                value = float(match[column_idx])
-
-                if task_type in TASK_TYPES_ACCURACY:
-                    value = 1. - value # Error, not accuracy
-
-                values.append(value)
+        catboost_train_dir = os.path.splitext(file_name)[0]
+        test_error_file = os.path.join(catboost_train_dir, 'test_error.tsv')
+        values = parse_catboost_log(test_error_file, task_type, iterations)
 
     with open(file_name, 'r') as log:
         file_content = log.read()
@@ -140,17 +151,15 @@ def parse_log(algorithm_name, task_type, file_name, iterations):
             time_series.append(float(match[0]))
 
             if algorithm in ['lightgbm', 'xgboost']:
-                if task_type == 'Classification' and i == 0:
-                    metric = match[2]
-                    assert metric == 'binary_error' and algorithm == 'lightgbm'\
-                        or metric == 'eval-error' and algorithm == 'xgboost'
-                elif task_type == 'Multiclass' and i == 0:
-                    raise NotImplemented()
+                metric = match[2]
+
+                # Sanity check on parsed metric
+                assert metric == METRIC_NAME[algorithm][task_type]
 
                 values.append(float(match[3]))
 
         duration = ELAPSED_REGEX.findall(file_content)
-        duration = float(duration[0]) if len(duration) > 0 else 0
+        duration = float(duration[0]) if len(duration) > 0 else 0.
 
     return np.array(time_series), np.array(values), duration
 
@@ -185,8 +194,6 @@ def read_results(dir_name):
                 payload = parse_log(algorithm_name, task_type, path, iterations)
             except Exception as e:
                 print('Log for ' + path + ' is broken: ' + str(e))
-
-            if payload is None:
                 continue
 
             time_series, values, duration = payload

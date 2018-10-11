@@ -15,7 +15,7 @@ from sklearn.metrics import mean_squared_error, accuracy_score
 RANDOM_SEED = 0
 
 
-class FileWithTime:
+class TimeAnnotatedFile:
     def __init__(self, file_descriptor):
         self.file_descriptor = file_descriptor
 
@@ -24,8 +24,8 @@ class FileWithTime:
             self.file_descriptor.write('\n')
             return
 
-        time = datetime.now()
-        new_message = "Time: [%d.%06d]\t%s" % (time.second, time.microsecond, message)
+        cur_time = datetime.now()
+        new_message = "Time: [%d.%06d]\t%s" % (cur_time.second, cur_time.microsecond, message)
         self.file_descriptor.write(new_message)
 
     def flush(self):
@@ -41,7 +41,7 @@ class Logger:
         self.stdout = sys.stdout
 
     def __enter__(self):
-        self.file = FileWithTime(open(self.filename, 'w'))
+        self.file = TimeAnnotatedFile(open(self.filename, 'w'))
         sys.stdout = self.file
 
     def __exit__(self, exception_type, exception_value, traceback):
@@ -56,38 +56,46 @@ def _params_to_str(params):
     return ''.join(map(lambda (key, value): '{}[{}]'.format(key, str(value)), params.items()))
 
 
+def check_log(log_file):
+    print('Checking log')
+    if os.path.exists(log_file):
+        with open(log_file, 'r') as f:
+            lines = f.readlines()
+            return len(lines) > 0 and 'Elapsed: ' in lines[-1]
+    return False
+
+
+def eval_metric(data, prediction):
+    if data.metric == "RMSE":
+        return np.sqrt(mean_squared_error(data.y_test, prediction))
+    elif data.metric == "Accuracy":
+        if data.task == "Classification":
+            prediction = prediction > 0.5
+        elif data.task == "Multiclass":
+            if prediction.ndim > 1:
+                prediction = np.argmax(prediction, axis=1)
+        return accuracy_score(data.y_test, prediction)
+    else:
+        raise ValueError("Unknown metric: " + data.metric)
+
+
 class Learner:
-    def __init__(self, data, use_gpu, eval_on_train):
-        self.default_params = self._configure(data, use_gpu, eval_on_train)
-        self.trees_step = 10
+    def __init__(self):
+        self.default_params = {}
 
     def _fit(self, tunable_params):
         params = deepcopy(self.default_params)
         params.update(tunable_params)
 
-        print('Parameters:')
-        print(params)
+        print('Parameters:\n{}' + str(params))
         return params
 
-    def __eval_iter(self, pred):
-        if self.metric == "RMSE":
-            return np.sqrt(mean_squared_error(data.y_test, pred))
-        elif self.metric == "Accuracy":
-            if self.task == "Classification":
-                pred = pred > 0.5
-            elif data.task == "Multiclass":
-                if pred.ndim > 1:
-                    pred = np.argmax(pred, axis=1)
-            return accuracy_score(y_test, pred)
-        else:
-            raise ValueError("Unknown metric: " + data.metric)
-
-    def __eval(self, data):
+    def eval(self, data, num_iterations, step=10):
         scores = []
 
-        for n_tree in range(num_iterations, step=self.trees_step):
+        for n_tree in range(num_iterations, step=step):
             prediction = self.predict(n_tree)
-            score = self.__eval_iter(data, prediction)
+            score = eval_metric(data, prediction)
             scores.append(score)
 
         return scores
@@ -96,24 +104,16 @@ class Learner:
         raise Exception('Not implemented')
 
     def set_train_dir(self, params, path):
-        pass
+        raise Exception('Not implemented')
 
-    def check_log(self, log_file):
-        print('Checking log')
-        if os.path.exists(log_file):
-            with open(log_file, 'r') as f:
-                lines = f.readlines()
-                return len(lines) > 0 and 'Elapsed: ' in lines[-1]
-        return False
+    def run(self, params, log_dir_name):
+        if not os.path.exists(log_dir_name):
+            os.makedirs(log_dir_name)
 
-    def run(self, params, log_dirname, eval_data=None):
-        if not os.path.exists(log_dirname):
-            os.makedirs(log_dirname)
-
-        path = os.path.join(log_dirname, _params_to_str(params))
+        path = os.path.join(log_dir_name, _params_to_str(params))
         filename = os.path.join(path + '.log')
 
-        if self.check_log(filename):
+        if check_log(filename):
             print('Skipping experiment, reason: log already exists and is consistent')
             return 0
 
@@ -125,22 +125,12 @@ class Learner:
             elapsed = time.time() - start
             print('Elapsed: ' + str(elapsed))
 
-            if eval_data:
-                scores = self.__eval(eval_data)
-                for idx, score in enumerate(scores):
-                    print('[{1:5}] {2:}'.format(idx * self.trees_step, score))
-
         return elapsed
 
 
 class XGBoostLearner(Learner):
-    def __init__(self, data, use_gpu, eval_on_train):
-        Learner.__init__(self, data, use_gpu, eval_on_train)
-
-    def name(self):
-        return 'xgboost'
-
-    def _configure(self, data, use_gpu, eval_on_train):
+    def __init__(self, data, use_gpu):
+        Learner.__init__(self)
         params = {
             'n_gpus': 1,
             'silent': 0,
@@ -166,31 +156,30 @@ class XGBoostLearner(Learner):
         else:
             raise ValueError("Unknown task: " + data.task)
 
-        if eval_on_train:
-            if data.metric == 'Accuracy':
-                params['eval_metric'] = 'error' if data.task == 'Classification' else 'merror'
+        if data.metric == 'Accuracy':
+            params['eval_metric'] = 'error' if data.task == 'Classification' else 'merror'
 
-        self.dtrain = xgb.DMatrix(data.X_train, data.y_train)
-        self.dtest = xgb.DMatrix(data.X_test, data.y_test)
+        self.train = xgb.DMatrix(data.X_train, data.y_train)
+        self.test = xgb.DMatrix(data.X_test, data.y_test)
 
-        return params
+        self.default_params = params
+
+    @staticmethod
+    def name():
+        return 'xgboost'
 
     def _fit(self, tunable_params):
         params = Learner._fit(self, tunable_params)
-        self.learner = xgb.train(params, self.dtrain, tunable_params['iterations'], evals=[(self.dtest, 'eval')])
+        self.learner = xgb.train(params, self.train, tunable_params['iterations'], evals=[(self.test, 'eval')])
 
     def predict(self, n_tree):
-        return self.learner.predict(self.dtest, ntree_limit=n_tree)
+        return self.learner.predict(self.test, ntree_limit=n_tree)
 
 
 class LightGBMLearner(Learner):
-    def __init__(self, data, use_gpu, eval_on_train):
-        Learner.__init__(self, data, use_gpu, eval_on_train)
+    def __init__(self, data, use_gpu):
+        Learner.__init__(self)
 
-    def name(self):
-        return 'lightgbm'
-
-    def _configure(self, data, use_gpu, eval_on_train):
         params = {
             'task': 'train',
             'boosting_type': 'gbdt',
@@ -212,18 +201,21 @@ class LightGBMLearner(Learner):
         else:
             raise ValueError("Unknown task: " + data.task)
 
-        if eval_on_train:
-            if data.task == 'Classification':
-                params['metric'] = 'binary_error'
-            elif data.task == 'Multiclass':
-                params['metric'] = 'multi_error'
-            elif data.task == 'Regression':
-                params['metric'] = 'rmse'
+        if data.task == 'Classification':
+            params['metric'] = 'binary_error'
+        elif data.task == 'Multiclass':
+            params['metric'] = 'multi_error'
+        elif data.task == 'Regression':
+            params['metric'] = 'rmse'
 
-        self.lgb_train = lgb.Dataset(data.X_train, data.y_train)
-        self.lgb_eval = lgb.Dataset(data.X_test, data.y_test, reference=self.lgb_train)
+        self.train = lgb.Dataset(data.X_train, data.y_train)
+        self.test = lgb.Dataset(data.X_test, data.y_test, reference=self.train)
 
-        return params
+        self.default_params = params
+
+    @staticmethod
+    def name():
+        return 'lightgbm'
 
     def _fit(self, tunable_params):
         if 'max_depth' in tunable_params:
@@ -236,25 +228,21 @@ class LightGBMLearner(Learner):
         params = Learner._fit(self, tunable_params)
         self.learner = lgb.train(
             params,
-            self.lgb_train,
+            self.train,
             num_boost_round=num_iterations,
-            valid_sets=self.lgb_eval
+            valid_sets=self.test
         )
 
     def predict(self, n_tree):
-        return self.learner.predict(self.lgb_eval, num_iteration=n_tree)
+        return self.learner.predict(self.test, num_iteration=n_tree)
 
 
 class CatBoostLearner(Learner):
-    def __init__(self, data, use_gpu, eval_on_train):
-        Learner.__init__(self, data, use_gpu, eval_on_train)
+    def __init__(self, data, use_gpu):
+        Learner.__init__(self)
 
-    def name(self):
-        return 'catboost'
-
-    def _configure(self, data, use_gpu, eval_on_train):
         params = {
-            'devices' : [0],
+            'devices': [0],
             'logging_level': 'Info',
             'use_best_model': False,
             'bootstrap_type': 'Bernoulli'
@@ -270,27 +258,30 @@ class CatBoostLearner(Learner):
         elif data.task == 'Multiclass':
             params['loss_function'] = 'MultiClass'
 
-        if eval_on_train:
-            if data.metric == 'Accuracy':
-                params['custom_metric'] = 'Accuracy'
+        if data.metric == 'Accuracy':
+            params['custom_metric'] = 'Accuracy'
 
-        self.cat_train = cat.Pool(data.X_train, data.y_train)
-        self.cat_test = cat.Pool(data.X_test, data.y_test)
+        self.train = cat.Pool(data.X_train, data.y_train)
+        self.test = cat.Pool(data.X_test, data.y_test)
 
-        return params
+        self.default_params = params
+
+    @staticmethod
+    def name():
+        return 'catboost'
 
     def _fit(self, tunable_params):
         params = Learner._fit(self, tunable_params)
         self.model = cat.CatBoost(params)
-        self.model.fit(self.cat_train, eval_set=self.cat_test, verbose_eval=True)
+        self.model.fit(self.train, eval_set=self.test, verbose_eval=True)
 
     def set_train_dir(self, params, path):
         params["train_dir"] = path
 
     def predict(self, n_tree):
-        if data.task == "Multiclass":
-            prediction = self.model.predict_proba(self.cat_test, ntree_end=n_tree)
+        if self.default_params['loss_function'] == "Multiclass":
+            prediction = self.model.predict_proba(self.test, ntree_end=n_tree)
         else:
-            prediction = self.model.predict(self.cat_test, ntree_end=n_tree)
+            prediction = self.model.predict(self.test, ntree_end=n_tree)
 
         return prediction
