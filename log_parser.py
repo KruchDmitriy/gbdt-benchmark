@@ -85,6 +85,9 @@ class Track:
     def get_time_per_iter(self):
         return self.time_per_iter
 
+    def get_median_time_per_iter(self):
+        return np.median(self.time_per_iter)
+
     def get_fit_iterations(self):
         return self.time_series.shape[0]
 
@@ -131,7 +134,7 @@ def parse_catboost_log(test_error_file, task_type, iterations):
 def parse_log(algorithm_name, task_type, file_name, iterations):
     time_series = []
     values = []
-    algorithm = os.path.splitext(algorithm_name)[0]
+    algorithm = algorithm_name.rstrip('-CPU|GPU')
 
     if algorithm == 'catboost':
         catboost_train_dir = os.path.splitext(file_name)[0]
@@ -193,7 +196,7 @@ def read_results(dir_name):
             try:
                 payload = parse_log(algorithm_name, task_type, path, iterations)
             except Exception as e:
-                print('Log for ' + path + ' is broken: ' + str(e))
+                print('Log for ' + path + ' is broken: ' + repr(e))
                 continue
 
             time_series, values, duration = payload

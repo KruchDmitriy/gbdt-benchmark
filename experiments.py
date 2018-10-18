@@ -21,6 +21,12 @@ class Data:
 
             self.X_test = X[2]
             self.y_test = y[2]
+        elif 'CoverType' in name:
+            self.X_train = X[0]
+            self.y_train = y[0]
+
+            self.X_test = X[1]
+            self.y_test = y[1]
         else:
             self.X_train, self.X_test, self.y_train, self.y_test = \
                 train_test_split(X, y, test_size=test_size, random_state=0)

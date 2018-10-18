@@ -29,6 +29,10 @@ def plot_time_per_iter(tracks, figsize=FIGURE_SIZE, title=None, save_path='time_
     if title is not None:
         plt.title(title, FONT_DICT)
 
+    for i, alg_name in enumerate(algs):
+        print(alg_name)
+        print(np.median(time_per_iters[i]))
+
     plt.ylabel('Seconds', FONT_DICT)
     plt.boxplot(time_per_iters, labels=algs)
 
@@ -73,7 +77,7 @@ def plot_quality(tracks, from_iter, to_iter, figsize=FIGURE_SIZE, title=None, sa
         lines.append(line)
         names.append(str(track))
 
-    plt.legend(lines, names, prop={'size': 12})
+    plt.legend(lines, names, prop={'size': 9})
 
     if os.path.exists(save_path):
         print('WARNING: file ' + save_path + ' already exists')
@@ -212,6 +216,10 @@ if __name__ == '__main__':
 
     if args.type == 'best':
         best_tracks = get_best(tracks, top=args.top)
+        for alg in best_tracks.keys():
+            for track in best_tracks[alg]:
+                print(track)
+                print(track.get_best_score())
 
         plot_quality(best_tracks, args.from_iter, args.to_iter, figsize=args.fig_size,
                      title=args.title, save_path=os.path.join(args.out_dir, 'best_quality.png'))
