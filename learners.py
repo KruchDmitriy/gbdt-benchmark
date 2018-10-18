@@ -104,7 +104,7 @@ class Learner:
         raise Exception('Not implemented')
 
     def set_train_dir(self, params, path):
-        raise Exception('Not implemented')
+        pass
 
     def run(self, params, log_dir_name):
         if not os.path.exists(log_dir_name):
