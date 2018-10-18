@@ -201,7 +201,10 @@ def get_cover_type():
     X_train.drop(X_train.columns[-1], axis=1, inplace=True)
     X_test.drop(X_test.columns[-1], axis=1, inplace=True)
 
-    return (X_train.values, X_test.values), (y_train.values, y_test.values)
+    y_train = np.array(y_train.values, dtype=int)
+    y_test = np.array(y_test.values, dtype=int)
+
+    return (X_train.values, X_test.values), (y_train, y_test)
 
 
 @mem.cache
