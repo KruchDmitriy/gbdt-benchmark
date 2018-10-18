@@ -42,4 +42,4 @@ if __name__ == '__main__':
 
     for experiment in experiments:
         print(experiment.name)
-        experiment.run(args.use_gpu, experiment_learners, params_grid, args.eval_on_train, args.out_dir)
+        experiment.run(args.use_gpu, experiment_learners, params_grid, args.out_dir)

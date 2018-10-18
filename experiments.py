@@ -39,14 +39,14 @@ class Experiment:
         self.task = task
         self.metric = metric
 
-    def run(self, use_gpu, learners, params_grid, eval_on_train, out_dir):
+    def run(self, use_gpu, learners, params_grid, out_dir):
         X, y = self.data_func()
         data = Data(X, y, self.name, self.task, self.metric)
 
         device_type = 'GPU' if use_gpu else 'CPU'
 
         for LearnerType in learners:
-            learner = LearnerType(data, use_gpu, eval_on_train)
+            learner = LearnerType(data, use_gpu)
             algorithm_name = learner.name() + '-' + device_type
             print('Started to train ' + algorithm_name)
 
