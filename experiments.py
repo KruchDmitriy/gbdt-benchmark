@@ -54,9 +54,11 @@ class Experiment:
                 print(params)
 
                 log_dirname = os.path.join(out_dir, self.name, algorithm_name)
-                elapsed = learner.run(params, log_dirname)
-
-                print('Timing: ' + str(elapsed) + ' sec')
+                try:
+                    elapsed = learner.run(params, log_dirname)
+                    print('Timing: ' + str(elapsed) + ' sec')
+                except Exception as e:
+                    print('Exception during training: ' + repr(e))
 
 
 DATASETS = {
