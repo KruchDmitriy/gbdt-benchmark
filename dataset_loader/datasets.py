@@ -208,7 +208,7 @@ def get_cover_type():
 
 
 @mem.cache
-def get_synthetic_regression(num_rows=None):
+def get_synthetic_regression():
     """
     Synthetic regression generator from sklearn (
     http://scikit-learn.org/stable/modules/generated/sklearn.datasets.make_regression.html).
@@ -216,12 +216,23 @@ def get_synthetic_regression(num_rows=None):
     - Dimensions: 10000000 rows, 100 columns.
     - Task: Regression
 
-    :param num_rows:
     :return: X, y
     """
-    if num_rows is None:
-        num_rows = 10000000
-    return datasets.make_regression(n_samples=num_rows, bias=100, noise=1.0, random_state=0)
+    return datasets.make_regression(n_samples=10000000, bias=100, noise=1.0, random_state=0)
+
+
+@mem.cache
+def get_synthetic_regression_5k_features():
+    """
+    Synthetic regression generator from sklearn (
+    http://scikit-learn.org/stable/modules/generated/sklearn.datasets.make_regression.html).
+
+    - Dimensions: 100000 rows, 5000 columns.
+    - Task: Regression
+
+    :return: X, y
+    """
+    return datasets.make_regression(n_samples=100000, n_features=5000, bias=100, noise=1.0, random_state=0)
 
 
 @mem.cache

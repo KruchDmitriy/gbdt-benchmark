@@ -62,6 +62,8 @@ class Experiment:
 DATASETS = {
     "year-msd": Experiment(data_loader.get_year, "YearPredictionMSD", "Regression", "RMSE"),
     "synthetic": Experiment(data_loader.get_synthetic_regression, "Synthetic", "Regression", "RMSE"),
+    "synthetic-5k-features": Experiment(data_loader.get_synthetic_regression_5k_features,
+                                        "Synthetic5kFeatures", "Regression", "RMSE"),
     "cover-type": Experiment(data_loader.get_cover_type, "CoverType", "Multiclass", "Accuracy"),
     "epsilon": Experiment(data_loader.get_epsilon, "Epsilon", "Classification", "Accuracy"),
     "higgs": Experiment(data_loader.get_higgs, "Higgs", "Classification", "Accuracy"),

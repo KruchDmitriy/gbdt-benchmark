@@ -86,7 +86,7 @@ def plot_quality(tracks, from_iter, to_iter, figsize=FIGURE_SIZE, title=None, sa
     plt.close(fig)
 
 
-def plot_quality_vs_time(tracks, best_quality, low_percent=0.8, num_bins=100,
+def plot_quality_vs_time(tracks, best_quality, low_percent=0.8, num_bins=100, only_min=False,
                          figsize=FIGURE_SIZE, title=None, save_path='time_distr.png'):
     fig = plt.figure(figsize=figsize)
 
@@ -134,8 +134,11 @@ def plot_quality_vs_time(tracks, best_quality, low_percent=0.8, num_bins=100,
         x_values = np.array(x_values) - (float(i) - 1.) * up_percent / num_bins / 4.
         x_values = 1. - x_values
 
-        plt.errorbar(x=x_values, y=time_median, yerr=[error_minus, error_plus], fmt='o-', barsabove=True,
-                     capsize=2, linewidth=2, label=alg_name)
+        if only_min:
+            plt.plot(x_values, time_min, label=alg_name)
+        else:
+            plt.errorbar(x=x_values, y=time_median, yerr=[error_minus, error_plus], fmt='o-', barsabove=True,
+                         capsize=2, linewidth=2, label=alg_name)
 
     plt.legend(fontsize='large')
 
@@ -196,6 +199,7 @@ if __name__ == '__main__':
     parser.add_argument('--to-iter', type=int, default=None, help='only custom, best modes')
     parser.add_argument('--low-percent', type=float, default=0.9, help='only quality-vs-time mode')
     parser.add_argument('--num-bins', type=int, default=200, help='only quality-vs-time mode')
+    parser.add_argument('--only-min', action='store_true', help='only quality-vs-time mode')
     parser.add_argument('--top', type=int, default=3, help='only best mode')
     args = parser.parse_args()
 
@@ -211,8 +215,12 @@ if __name__ == '__main__':
         best_quality = min(map(lambda tracks: tracks[0].get_best_score(), best_tracks.values()))
         print(best_quality)
 
-        plot_quality_vs_time(tracks, best_quality=best_quality, low_percent=args.low_percent, figsize=args.fig_size,
-                             num_bins=args.num_bins, save_path=os.path.join(args.out_dir, 'quality_vs_time.png'))
+        if args.top:
+            tracks = get_best(tracks, top=args.top)
+
+        plot_quality_vs_time(tracks, best_quality=best_quality, low_percent=args.low_percent, only_min=args.only_min,
+                             figsize=args.fig_size, num_bins=args.num_bins,
+                             save_path=os.path.join(args.out_dir, 'quality_vs_time.png'))
 
     if args.type == 'best':
         best_tracks = get_best(tracks, top=args.top)
