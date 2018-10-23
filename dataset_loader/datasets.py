@@ -283,8 +283,8 @@ def get_abalone():
 
     abalone = pd.read_csv(filename, header=None)
     abalone[0] = abalone[0].astype('category').cat.codes
-    X = abalone[:, :-1].values
-    y = abalone[:, -1].values
+    X = abalone.iloc[:, :-1].values
+    y = abalone.iloc[:, -1].values
     return X, y
 
 
