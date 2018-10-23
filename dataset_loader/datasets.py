@@ -267,6 +267,47 @@ def get_year(num_rows=None):
     return X, y
 
 
+get_abalone_url = 'https://archive.ics.uci.edu/ml/machine-learning-databases/abalone/abalone.data'
+
+
+@mem.cache
+def get_abalone():
+    """
+    https://archive.ics.uci.edu/ml/machine-learning-databases/abalone
+    :return: X,y
+    """
+
+    filename = 'abalone.data'
+    if not os.path.exists(filename):
+        urlretrieve(get_abalone_url, filename)
+
+    abalone = pd.read_csv(filename, header=None)
+    abalone[0] = abalone[0].astype('category').cat.codes
+    X = abalone[:, :-1].values
+    y = abalone[:, -1].values
+    return X, y
+
+
+get_letters_url = 'http://archive.ics.uci.edu/ml/machine-learning-databases/letter-recognition/letter-recognition.data'
+
+
+@mem.cache
+def get_letters():
+    """
+    http://archive.ics.uci.edu/ml/datasets/Letter+Recognition
+    :return: X,y
+    """
+
+    filename = 'letter-recognition.data'
+    if not os.path.exists(filename):
+        urlretrieve(get_letters_url, filename)
+
+    letters = pd.read_csv(filename, header=None)
+    X = letters.iloc[:, 1:].values
+    y = letters.iloc[:, 0].values
+    return X, y
+
+
 get_msrank_url = "https://storage.mds.yandex.net/get-devtools-opensource/471749/msrank.tar.gz"
 
 
@@ -280,7 +321,7 @@ def _make_gen(reader):
 def count_lines(filename):
     with open(filename, 'rb') as f:
         f_gen = _make_gen(f.read)
-        return sum( buf.count(b'\n') for buf in f_gen )
+        return sum(buf.count(b'\n') for buf in f_gen)
 
 
 @mem.cache

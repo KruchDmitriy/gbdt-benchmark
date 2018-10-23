@@ -62,6 +62,8 @@ class Experiment:
 
 
 DATASETS = {
+    "abalone": Experiment(data_loader.get_abalone, "Abalone", "Regression", "RMSE"),
+    "letters": Experiment(data_loader.get_letters, "Letters", "Multiclass", "Accuracy"),
     "year-msd": Experiment(data_loader.get_year, "YearPredictionMSD", "Regression", "RMSE"),
     "synthetic": Experiment(data_loader.get_synthetic_regression, "Synthetic", "Regression", "RMSE"),
     "synthetic-5k-features": Experiment(data_loader.get_synthetic_regression_5k_features,
