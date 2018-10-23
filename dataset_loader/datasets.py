@@ -304,7 +304,10 @@ def get_letters():
 
     letters = pd.read_csv(filename, header=None)
     X = letters.iloc[:, 1:].values
-    y = letters.iloc[:, 0].values
+    y = letters.iloc[:, 0]
+    y = y.astype('category').cat.codes
+    y = y.values
+
     return X, y
 
 
