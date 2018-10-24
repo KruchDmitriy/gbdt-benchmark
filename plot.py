@@ -91,7 +91,7 @@ def plot_quality_vs_time(tracks, best_quality, low_percent=0.8, num_bins=100, on
     fig = plt.figure(figsize=figsize)
 
     if title is not None:
-        plt.title('Time distribution of reaching percent of best quality, Higgs', FONT_DICT)
+        plt.title(title, FONT_DICT)
 
     plt.xlabel('Quality (%)', FONT_DICT)
     plt.ylabel('Time to obtain (sec)', FONT_DICT)
@@ -127,6 +127,13 @@ def plot_quality_vs_time(tracks, best_quality, low_percent=0.8, num_bins=100, on
                 time_min.append(np.min(times))
 
                 x_values.append(float(k) / num_bins * up_percent)
+
+        cur_min = time_min[0]
+        for t in range(1, len(time_min)):
+            if time_min[t] > cur_min:
+                time_min[t] = cur_min
+            else:
+                cur_min = time_min[t]
 
         error_plus = np.array(time_q2) - np.array(time_median)
         error_minus = np.array(time_median) - np.array(time_min)
