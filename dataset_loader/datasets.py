@@ -187,7 +187,6 @@ def get_cover_type():
     - Dimensions: 581012 rows, 54 columns.
     - Task: Multiclass classification
 
-    :param num_rows:
     :return: X, y
     """
 

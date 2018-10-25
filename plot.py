@@ -185,7 +185,36 @@ def filter_tracks(tracks, params_cases):
     return filtered_tracks
 
 
-if __name__ == '__main__':
+ONLY_TYPES = {
+    'cat-cpu': ['catboost-CPU'],
+    'xgb-cpu': ['xgboost-CPU'],
+    'lgb-cpu': ['lightgbm-CPU'],
+    'cat-gpu': ['catboost-GPU'],
+    'xgb-gpu': ['xgboost-GPU'],
+    'lgb-gpu': ['lightgbm-GPU'],
+    'cat': ['catboost-CPU', 'catboost-GPU'],
+    'xgb': ['xgboost-CPU', 'xgboost-GPU'],
+    'lgb': ['lightgbm-CPU', 'lightgbm-GPU'],
+    'cpu': ['catboost-CPU', 'xgboost-CPU', 'lightgbm-CPU'],
+    'gpu': ['catboost-GPU', 'xgboost-GPU', 'lightgbm-GPU']
+}
+
+
+def get_default_file_name(plot_type, params):
+    default_file_names = {
+        'best': 'best_quality.png',
+        'quality-vs-time': 'quality_vs_time.png',
+        'time-per-iter': 'time_per_iter.png'
+    }
+
+    if plot_type in default_file_names.keys():
+        return default_file_names[plot_type]
+
+    if plot_type == 'custom':
+        return params_to_str(params) + '.png'
+
+
+def main():
     plot_functions = {
         'time-per-iter': plot_time_per_iter,
         'best': plot_quality,
@@ -195,10 +224,12 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--type', choices=plot_functions.keys(), required=True)
+    parser.add_argument('--only', nargs='+', choices=ONLY_TYPES.keys(), required=False)
     parser.add_argument('-i', '--results-dir', required=True)
     parser.add_argument('-t', '--title')
     parser.add_argument('-f', '--fig-size', nargs=2, type=int, default=FIGURE_SIZE)
     parser.add_argument('-o', '--out-dir', default='plots')
+    parser.add_argument('-d', '--file-name', required=False)
     parser.add_argument('--params-cases', help='draw plots only with those params (tracks filtering)'
                                                ' path to json file, each line corresponds to learner '
                                                'parameter (e.g. max_depth) and list of its values')
@@ -211,6 +242,19 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     tracks = read_results(args.results_dir)
+
+    file_name = args.file_name if args.file_name else get_default_file_name(args.type, args.params_cases)
+    save_path = os.path.join(args.out_dir, file_name)
+
+    if args.only:
+        filtered_tracks = {}
+
+        for only_type in args.only:
+            for alg_name in ONLY_TYPES[only_type]:
+                filtered_tracks[alg_name] = tracks[alg_name]
+
+        tracks = filtered_tracks
+
     if args.params_cases:
         with open(args.params_cases) as f:
             params_cases = json.load(f)
@@ -226,8 +270,7 @@ if __name__ == '__main__':
             tracks = get_best(tracks, top=args.top)
 
         plot_quality_vs_time(tracks, best_quality=best_quality, low_percent=args.low_percent, only_min=args.only_min,
-                             figsize=args.fig_size, num_bins=args.num_bins,
-                             save_path=os.path.join(args.out_dir, 'quality_vs_time.png'))
+                             figsize=args.fig_size, num_bins=args.num_bins, save_path=save_path)
 
     if args.type == 'best':
         best_tracks = get_best(tracks, top=args.top)
@@ -237,13 +280,15 @@ if __name__ == '__main__':
                 print(track.get_best_score())
 
         plot_quality(best_tracks, args.from_iter, args.to_iter, figsize=args.fig_size,
-                     title=args.title, save_path=os.path.join(args.out_dir, 'best_quality.png'))
+                     title=args.title, save_path=save_path)
 
     if args.type == 'custom':
         plot_quality(tracks, args.from_iter, args.to_iter,
-                     figsize=args.fig_size, title=args.title,
-                     save_path=os.path.join(args.out_dir, args.params_cases + '.png'))
+                     figsize=args.fig_size, title=args.title, save_path=save_path)
 
     if args.type == 'time-per-iter':
-        plot_time_per_iter(tracks, figsize=args.fig_size, title=args.title,
-                           save_path=os.path.join(args.out_dir, 'time_per_iter.png'))
+        plot_time_per_iter(tracks, figsize=args.fig_size, title=args.title, save_path=save_path)
+
+
+if __name__ == '__main__':
+    main()
