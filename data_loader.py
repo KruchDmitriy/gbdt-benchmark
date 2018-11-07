@@ -21,14 +21,20 @@ DEFAULT_TRAIN_SIZE = 0.8
 
 
 def get_dataset(experiment_name, dataset_dir):
-    cached_data_name = os.path.join(dataset_dir, 'data.pkl')
+    data_loader = DATA_LOADERS[experiment_name]
+    cache_dir = os.path.join(dataset_dir, data_loader.func_name)
+
+    if not os.path.exists(cache_dir):
+        os.makedirs(cache_dir)
+
+    cached_data_name = os.path.join(cache_dir, 'data.pkl')
 
     if os.path.exists(cached_data_name):
         print('Return cached dataset')
         with open(cached_data_name, 'rb') as cached_data:
             return pickle.load(cached_data)
 
-    data = Data(DATA_LOADERS[experiment_name], experiment_name, dataset_dir)
+    data = Data(data_loader, experiment_name, cache_dir)
     with open(cached_data_name, 'wb') as cached_data:
         pickle.dump(data, cached_data)
 
@@ -96,7 +102,7 @@ def _count_lines(filename):
         return sum(buf.count(b'\n') for buf in f_gen)
 
 
-def get_abalone(dataset_dir):
+def abalone(dataset_dir):
     """
     https://archive.ics.uci.edu/ml/machine-learning-databases/abalone
 
@@ -117,7 +123,7 @@ def get_abalone(dataset_dir):
     return X, y
 
 
-def get_airline(dataset_dir):
+def airline(dataset_dir):
     """
     Airline dataset (http://kt.ijs.si/elena_ikonomovska/data.html)
 
@@ -163,7 +169,7 @@ def get_airline(dataset_dir):
     return X.values, y.values
 
 
-def get_airline_one_hot(dataset_dir):
+def airline_one_hot(dataset_dir):
     """
     Dataset from szilard benchmarks: https://github.com/szilard/GBM-perf
 
@@ -208,7 +214,7 @@ def get_airline_one_hot(dataset_dir):
     return sets, labels
 
 
-def get_bosch(dataset_dir):
+def bosch(dataset_dir):
     """
     Bosch Production Line Performance data set (
     https://www.kaggle.com/c/bosch-production-line-performance)
@@ -233,7 +239,7 @@ def get_bosch(dataset_dir):
     return X.values, y.values
 
 
-def get_cover_type(dataset_dir):
+def cover_type(dataset_dir):
     """
     Cover type dataset from UCI machine learning repository (
     https://archive.ics.uci.edu/ml/datasets/covertype).
@@ -269,7 +275,7 @@ def get_cover_type(dataset_dir):
     return (X_train.values, X_test.values), (y_train, y_test)
 
 
-def get_epsilon(dataset_dir):
+def epsilon(dataset_dir):
     """
     TaskType:binclass
     NumberOfFeatures:2000
@@ -304,18 +310,18 @@ def get_epsilon(dataset_dir):
     return X_train, y_train
 
 
-def get_epsilon_sampled(dataset_dir):
+def epsilon_sampled(dataset_dir):
     """
     TaskType:binclass
     NumberOfFeatures:28
     NumberOfInstances:500K
     """
-    X, y = get_epsilon(dataset_dir)
+    X, y = epsilon(dataset_dir)
     feat_ids = np.random.choice(X.shape[1], 28, replace=False)
     return X[:, feat_ids], y
 
 
-def get_higgs(dataset_dir):
+def higgs(dataset_dir):
     """
     Higgs dataset from UCI machine learning repository (
     https://archive.ics.uci.edu/ml/datasets/HIGGS).
@@ -336,18 +342,18 @@ def get_higgs(dataset_dir):
     return X, y
 
 
-def get_higgs_sampled(dataset_dir):
+def higgs_sampled(dataset_dir):
     """
     TaskType:binclass
     NumberOfFeatures:28
     NumberOfInstances:500K
     """
-    X, y = get_higgs(dataset_dir)
+    X, y = higgs(dataset_dir)
     ids = np.random.choice(X.shape[0], size=500000, replace=False)
     return X[ids], y[ids]
 
 
-def get_letters(dataset_dir):
+def letters(dataset_dir):
     """
     http://archive.ics.uci.edu/ml/datasets/Letter+Recognition
 
@@ -370,7 +376,7 @@ def get_letters(dataset_dir):
     return X, y
 
 
-def get_msrank(dataset_dir):
+def msrank(dataset_dir):
     """
     Microsoft learning to rank dataset
 
@@ -407,7 +413,7 @@ def get_msrank(dataset_dir):
     return sets, labels
 
 
-def get_synthetic_classification(dataset_dir):
+def synthetic_classification(dataset_dir):
     """
     Synthetic classification generator from sklearn
 
@@ -418,7 +424,7 @@ def get_synthetic_classification(dataset_dir):
     return datasets.make_classification(n_samples=500000, n_features=28, n_classes=2, random_state=0)
 
 
-def get_synthetic_regression(dataset_dir):
+def synthetic_regression(dataset_dir):
     """
     Synthetic regression generator from sklearn
     http://scikit-learn.org/stable/modules/generated/sklearn.datasets.make_regression.html
@@ -430,7 +436,7 @@ def get_synthetic_regression(dataset_dir):
     return datasets.make_regression(n_samples=10000000, bias=100, noise=1.0, random_state=0)
 
 
-def get_synthetic_regression_5k_features(dataset_dir):
+def synthetic_regression_5k_features(dataset_dir):
     """
     Synthetic regression generator from sklearn
     http://scikit-learn.org/stable/modules/generated/sklearn.datasets.make_regression.html
@@ -442,7 +448,7 @@ def get_synthetic_regression_5k_features(dataset_dir):
     return datasets.make_regression(n_samples=100000, n_features=5000, bias=100, noise=1.0, random_state=0)
 
 
-def get_year(dataset_dir):
+def year(dataset_dir):
     """
     YearPredictionMSD dataset from UCI repository (
     https://archive.ics.uci.edu/ml/datasets/yearpredictionmsd)
@@ -464,20 +470,20 @@ def get_year(dataset_dir):
 
 
 DATA_LOADERS = {
-    "abalone": get_abalone,
-    "letters": get_letters,
-    "year-msd": get_year,
-    "synthetic": get_synthetic_regression,
-    "synthetic-5k-features": get_synthetic_regression_5k_features,
-    "cover-type": get_cover_type,
-    "epsilon": get_epsilon,
-    "higgs": get_higgs,
-    "bosch": get_bosch,
-    "airline": get_airline,
-    "airline-one-hot": get_airline_one_hot,
-    "higgs-sampled": get_higgs_sampled,
-    "epsilon-sampled": get_epsilon_sampled,
-    "synthetic-classification": get_synthetic_classification,
-    "msrank": get_msrank,
-    "msrank-classification": get_msrank
+    "abalone": abalone,
+    "letters": letters,
+    "year-msd": year,
+    "synthetic": synthetic_regression,
+    "synthetic-5k-features": synthetic_regression_5k_features,
+    "cover-type": cover_type,
+    "epsilon": epsilon,
+    "higgs": higgs,
+    "bosch": bosch,
+    "airline": airline,
+    "airline-one-hot": airline_one_hot,
+    "higgs-sampled": higgs_sampled,
+    "epsilon-sampled": epsilon_sampled,
+    "synthetic-classification": synthetic_classification,
+    "msrank": msrank,
+    "msrank-classification": msrank
 }
