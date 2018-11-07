@@ -17,7 +17,7 @@ else:
     from urllib import urlretrieve  # pylint: disable=import-error,no-name-in-module
 
 
-DEFAULT_TRAIN_SIZE = 0.8
+DEFAULT_TEST_SIZE = 0.2
 
 
 def get_dataset(experiment_name, dataset_dir):
@@ -61,7 +61,7 @@ class Data:
             self.y_test = y[1]
         else:
             self.X_train, self.X_test, self.y_train, self.y_test = \
-                train_test_split(X, y, train_size=DEFAULT_TRAIN_SIZE, random_state=0)
+                train_test_split(X, y, test_size=DEFAULT_TEST_SIZE, random_state=0)
 
 
 def read_libsvm(file_obj, n_samples, n_features):
