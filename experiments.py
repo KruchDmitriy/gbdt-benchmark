@@ -12,6 +12,7 @@ class Experiment:
         self.metric = metric
 
     def run(self, use_gpu, learners, params_grid, dataset_dir, out_dir):
+        dataset_dir = os.path.join(dataset_dir, self.name)
         dataset = get_dataset(self.name, dataset_dir)
 
         device_type = 'GPU' if use_gpu else 'CPU'
