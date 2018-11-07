@@ -404,7 +404,7 @@ def msrank(dataset_dir):
     dirname = os.path.join(dataset_dir, 'MSRank')
     if not os.path.exists(dirname):
         tar = tarfile.open(filename, "r:gz")
-        tar.extractall()
+        tar.extractall(dirname)
         tar.close()
 
     sets = []
