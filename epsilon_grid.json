@@ -1,6 +1,0 @@
-{
-    "max_depth": [4, 6, 8],
-    "learning_rate": [0.09, 0.15, 0.25],
-    "subsample": [0.5, 1.0],
-    "reg_lambda": [1, 10, 100]
-}
