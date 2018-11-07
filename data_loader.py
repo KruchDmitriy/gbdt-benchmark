@@ -41,19 +41,23 @@ def get_dataset(experiment_name, dataset_dir):
     return data
 
 
+ALREADY_SPLIT = {
+    "airline-one-hot",
+    "cover-type",
+    "epsilon-sampled",
+    "msrank",
+    "msrank-classification",
+    "epsilon"
+}
+
+
 class Data:
     def __init__(self, data_loader, name, dataset_dir):
         self.name = name
 
         X, y = data_loader(dataset_dir)
 
-        if 'MSRank' in self.name:
-            self.X_train = np.vstack([X[0], X[1]])
-            self.y_train = np.hstack([y[0], y[1]])
-
-            self.x_test = X[2]
-            self.y_test = y[2]
-        elif 'CoverType' in self.name or 'Airline-OneHot' in self.name:
+        if self.name in ALREADY_SPLIT:
             self.X_train = X[0]
             self.y_train = y[0]
 
@@ -286,28 +290,32 @@ def epsilon(dataset_dir):
     name_train = 'epsilon_normalized.bz2'
     name_test = 'epsilon_normalized.t.bz2'
 
+    xs = []
+    ys = []
+
     for name in [name_train, name_test]:
         filename = os.path.join(dataset_dir, name)
         if not os.path.exists(filename):
             print('Downloading ' + name)
             urlretrieve(url + name, filename)
 
-    print('Processing')
+        print('Processing')
+        if name == name_train:
+            n_samples = 400000
+        else:
+            n_samples = 100000
 
-    with bz2.BZ2File(name_train, 'r') as f_train:
-        X_train, y_train = read_libsvm(f_train, n_samples=400000, n_features=2000)
+        with bz2.BZ2File(filename, 'r') as f:
+            x, y = read_libsvm(f, n_samples=n_samples, n_features=2000)
 
-    with bz2.BZ2File(name_test, 'r') as f_test:
-        X_test, y_test = read_libsvm(f_test, n_samples=100000, n_features=2000)
+            y[y <= 0] = 0
+            y[y > 0] = 1
+            y.astype(int)
 
-    X_train = np.vstack((X_train, X_test))
-    y_train = np.hstack((y_train, y_test))
+            xs.append(x)
+            ys.append(y)
 
-    y_train[y_train <= 0] = 0
-    y_train[y_train > 0] = 1
-    y_train.astype(int)
-
-    return X_train, y_train
+    return xs, ys
 
 
 def epsilon_sampled(dataset_dir):
@@ -316,9 +324,12 @@ def epsilon_sampled(dataset_dir):
     NumberOfFeatures:28
     NumberOfInstances:500K
     """
-    X, y = epsilon(dataset_dir)
-    feat_ids = np.random.choice(X.shape[1], 28, replace=False)
-    return X[:, feat_ids], y
+    xs, ys = epsilon(dataset_dir)
+    feat_ids = np.random.choice(xs[0].shape[1], 28, replace=False)
+    xs[0] = xs[0][:, feat_ids]
+    xs[1] = xs[1][:, feat_ids]
+
+    return xs, ys
 
 
 def higgs(dataset_dir):
@@ -335,9 +346,9 @@ def higgs(dataset_dir):
     filename = os.path.join(dataset_dir, 'HIGGS.csv.gz')
     if not os.path.exists(filename):
         urlretrieve(url, filename)
-    higgs = pd.read_csv(filename)
-    X = higgs.iloc[:, 1:].values
-    y = higgs.iloc[:, 0].values
+    df = pd.read_csv(filename)
+    X = df.iloc[:, 1:].values
+    y = df.iloc[:, 0].values
 
     return X, y
 
@@ -410,6 +421,11 @@ def msrank(dataset_dir):
         sets.append(X)
         labels.append(y)
 
+    sets[0] = np.vstack((sets[0], sets[1]))
+    labels[0] = np.hstack((labels[0], labels[1]))
+    del sets[1]
+    del labels[1]
+
     return sets, labels
 
 
@@ -463,27 +479,27 @@ def year(dataset_dir):
     if not os.path.exists(filename):
         urlretrieve(url, filename)
 
-    year = pd.read_csv(filename, header=None)
-    X = year.iloc[:, 1:].values
-    y = year.iloc[:, 0].values
+    df = pd.read_csv(filename, header=None)
+    X = df.iloc[:, 1:].values
+    y = df.iloc[:, 0].values
     return X, y
 
 
 DATA_LOADERS = {
     "abalone": abalone,
-    "letters": letters,
-    "year-msd": year,
-    "synthetic": synthetic_regression,
-    "synthetic-5k-features": synthetic_regression_5k_features,
-    "cover-type": cover_type,
-    "epsilon": epsilon,
-    "higgs": higgs,
-    "bosch": bosch,
     "airline": airline,
     "airline-one-hot": airline_one_hot,
-    "higgs-sampled": higgs_sampled,
+    "bosch": bosch,
+    "cover-type": cover_type,
+    "epsilon": epsilon,
     "epsilon-sampled": epsilon_sampled,
-    "synthetic-classification": synthetic_classification,
+    "higgs": higgs,
+    "higgs-sampled": higgs_sampled,
+    "letters": letters,
     "msrank": msrank,
-    "msrank-classification": msrank
+    "msrank-classification": msrank,
+    "synthetic": synthetic_regression,
+    "synthetic-5k-features": synthetic_regression_5k_features,
+    "synthetic-classification": synthetic_classification,
+    "year-msd": year
 }
