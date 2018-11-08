@@ -1,4 +1,5 @@
 import argparse
+import json
 
 import numpy as np
 
@@ -49,11 +50,18 @@ def main():
     total = sum(total) / len(total)
 
     with open(args.output, 'w') as f:
-        f.write('Best\tIter\tMedian\tLow\tHigh\tTotal\n')
-        f.write('%f\t%d\t%f\t%f\t%f\t%f\n' % (best_quality, best_iter, median, low, high, total))
+        json.dump({
+            "Best": best_quality,
+            "Iter": best_iter,
+            "MedianTime": median,
+            "LowTime": low,
+            "HighTime": high,
+            "TotalTime": total
+        }, f)
 
+    best_track_scores = list(best_track.get_series()[1])
     with open(args.curve_output, 'w') as f:
-        f.write(best_track.get_series()[1])
+        json.dump(best_track_scores, f, indent=4)
 
 
 if __name__ == "__main__":

@@ -20,6 +20,26 @@ else:
 DEFAULT_TEST_SIZE = 0.2
 
 
+DATASET_CHARACTERISTIC = {
+    "abalone": (4177, 8),
+    "airline": (115000000, 13),
+    "airline-one-hot": (10100000, 700),
+    "bosch": (1184000, 968),
+    "cover-type": (581012, 54),
+    "epsilon": (500000, 2000),
+    "epsilon-sampled": (500000, 28),
+    "higgs": (11000000, 28),
+    "higgs-sampled": (500000, 28),
+    "letters": (20000, 16),
+    "msrank": (1200192, 137),
+    "msrank-classification": (1200192, 137),
+    "synthetic": (10000000, 100),
+    "synthetic-5k-features": (100000, 5000),
+    "synthetic-classification": (500000, 28),
+    "year-msd": (515345, 90)
+}
+
+
 def get_dataset(experiment_name, dataset_dir):
     data_loader = DATA_LOADERS[experiment_name]
     cache_dir = os.path.join(dataset_dir, data_loader.func_name)
