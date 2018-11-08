@@ -44,9 +44,11 @@ if __name__ == '__main__':
     experiment = EXPERIMENTS[args.experiment]
 
     iterations = default_num_iterations(args.experiment)
+    if args.iterations is not None:
+        iterations = args.iterations
 
     params_grid = {
-        "iterations": [args.iterations]
+        "iterations": [iterations]
     }
 
     if args.params_grid:
