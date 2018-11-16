@@ -38,8 +38,8 @@ DATASET_CHARACTERISTIC = {
     "synthetic": (10000000, 100),
     "synthetic-5k-features": (100000, 5000),
     "synthetic-classification": (500000, 28),
-    "yahoo": (638794, 698),
-    "yahoo-classification": (638794, 698),
+    "yahoo": (638794, 700),
+    "yahoo-classification": (638794, 700),
     "year-msd": (515345, 90)
 }
 
