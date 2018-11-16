@@ -147,7 +147,7 @@ class XGBoostLearner(Learner):
                 params["objective"] = "gpu:" + params["objective"]
         elif task == "multiclass":
             params["objective"] = "multi:softmax"
-            params["num_class"] = np.max(data.y_test) + 1
+            params["num_class"] = int(np.max(data.y_test)) + 1
         elif task == "binclass":
             params["objective"] = "binary:logistic"
             if use_gpu:
@@ -197,7 +197,7 @@ class LightGBMLearner(Learner):
             params["objective"] = "regression"
         elif task == "multiclass":
             params["objective"] = "multiclass"
-            params["num_class"] = np.max(data.y_test) + 1
+            params["num_class"] = int(np.max(data.y_test)) + 1
         elif task == "binclass":
             params["objective"] = "binary"
         else:
