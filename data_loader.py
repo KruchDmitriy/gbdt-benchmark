@@ -567,5 +567,7 @@ DATA_LOADERS = {
     "synthetic": synthetic_regression,
     "synthetic-5k-features": synthetic_regression_5k_features,
     "synthetic-classification": synthetic_classification,
+    "yahoo": yahoo,
+    "yahoo-classification": yahoo,
     "year-msd": year
 }
