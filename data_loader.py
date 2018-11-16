@@ -47,22 +47,16 @@ Data = namedtuple("Data", ["name", "X_train", "X_test", "y_train", "y_test"])
 
 def get_from_cache(experiment_name, train_file, test_file):
     print('loading train')
-    train = pd.read_csv(train_file, header=None, sep='\t')
+    train = np.loadtxt(train_file, delimiter='\t')
 
-    X_train = train.drop(0, axis=1).values
-    y_train = train[0].values
-    del train
-    gc.collect()
-    print('done')
+    X_train = train[:, 1:]
+    y_train = train[:, 0]
 
     print('loading test')
-    test = pd.read_csv(test_file, header=None, sep='\t')
+    test = np.loadtxt(test_file, delimiter='\t')
 
-    X_test = test.drop(0, axis=1).values
-    y_test = test[0].values
-    del test
-    gc.collect()
-    print('done')
+    X_test = test[:, 1:]
+    y_test = test[:, 0]
 
     return Data(experiment_name, X_train, X_test, y_train, y_test)
 
