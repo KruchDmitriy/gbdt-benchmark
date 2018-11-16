@@ -64,7 +64,11 @@ EXPERIMENT_TYPE = {
     "synthetic-5k-features":
         ["regression", "RMSE"],
     "year-msd":
-        ["regression", "RMSE"]
+        ["regression", "RMSE"],
+    "yahoo":
+        ["regression", "RMSE"],
+    "yahoo-classification":
+        ["multiclass", "Accuracy"]
 }
 
 EXPERIMENTS = {

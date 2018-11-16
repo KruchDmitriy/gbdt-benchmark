@@ -38,6 +38,8 @@ DATASET_CHARACTERISTIC = {
     "synthetic": (10000000, 100),
     "synthetic-5k-features": (100000, 5000),
     "synthetic-classification": (500000, 28),
+    "yahoo": (638794, 699),
+    "yahoo-classification": (638794, 699),
     "year-msd": (515345, 90)
 }
 
@@ -513,6 +515,19 @@ def synthetic_regression_5k_features(dataset_dir):
     NumberOfInstances:100K
     """
     return datasets.make_regression(n_samples=100000, n_features=5000, bias=100, noise=1.0, random_state=0)
+
+
+def yahoo(dataset_dir):
+    train_file = os.path.join(dataset_dir, 'train.tsv')
+    test_file = os.path.join(dataset_dir, 'test.tsv')
+
+    if not (os.path.exists(train_file) or os.path.exists(test_file)):
+        raise Exception('Please download dataset from '
+                        'https://webscope.sandbox.yahoo.com/catalog.php?datatype=c'
+                        ' and convert it to tsv file, 0 - Label, 1 - QueryId, 2 - ...features...')
+
+    train = pd.read_csv(train_file, sep='\t', header=None)
+    test = pd.read_csv(test_file, sep='\t', header=None)
 
 
 def year(dataset_dir):
