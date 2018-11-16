@@ -1,13 +1,15 @@
 """Module for loading preprocessed datasets for machine learning problems"""
 import bz2
 import os
-import pickle
 import re
+import gc
 import sys
 import tarfile
 
 import numpy as np
 import pandas as pd
+
+from collections import namedtuple
 from sklearn import datasets
 from sklearn.model_selection import train_test_split
 
@@ -40,23 +42,71 @@ DATASET_CHARACTERISTIC = {
 }
 
 
+Data = namedtuple("Data", ["name", "X_train", "X_test", "y_train", "y_test"])
+
+
+def get_from_cache(experiment_name, train_file, test_file):
+    print('loading train')
+    train = pd.read_csv(train_file, header=None, sep='\t')
+
+    X_train = train.drop(0, axis=1).values
+    y_train = train[0].values
+    del train
+    gc.collect()
+    print('done')
+
+    print('loading test')
+    test = pd.read_csv(test_file, header=None, sep='\t')
+
+    X_test = test.drop(0, axis=1).values
+    y_test = test[0].values
+    del test
+    gc.collect()
+    print('done')
+
+    return Data(experiment_name, X_train, X_test, y_train, y_test)
+
+
+def save_to_cache(data, train_file, test_file):
+    train = np.hstack([data.y_train.reshape(-1, 1), data.X_train])
+    train_df = pd.DataFrame(data=train)
+
+    train_df.to_csv(train_file, index=False, header=False, sep='\t')
+
+    test = np.hstack([data.y_test.reshape(-1, 1), data.X_test])
+    test_df = pd.DataFrame(data=test)
+
+    test_df.to_csv(test_file, index=False, header=False, sep='\t')
+
+
 def get_dataset(experiment_name, dataset_dir):
     data_loader = DATA_LOADERS[experiment_name]
-    cache_dir = os.path.join(dataset_dir, data_loader.func_name)
+    cache_dir = os.path.join(dataset_dir, experiment_name)
+
+    train_file = os.path.join(cache_dir, "train.tsv")
+    test_file = os.path.join(cache_dir, "test.tsv")
 
     if not os.path.exists(cache_dir):
         os.makedirs(cache_dir)
 
-    cached_data_name = os.path.join(cache_dir, 'data.pkl')
+    if all([os.path.exists(file_name) for file_name in [train_file, test_file]]):
+        print('Loading from cache')
+        return get_from_cache(experiment_name, train_file, test_file)
 
-    if os.path.exists(cached_data_name):
-        print('Return cached dataset')
-        with open(cached_data_name, 'rb') as cached_data:
-            return pickle.load(cached_data)
+    X, y = data_loader(dataset_dir)
 
-    data = Data(data_loader, experiment_name, cache_dir)
-    with open(cached_data_name, 'wb') as cached_data:
-        pickle.dump(data, cached_data)
+    if experiment_name in ALREADY_SPLIT:
+        X_train = X[0]
+        y_train = y[0]
+
+        X_test = X[1]
+        y_test = y[1]
+    else:
+        X_train, X_test, y_train, y_test = \
+            train_test_split(X, y, test_size=DEFAULT_TEST_SIZE, random_state=0)
+
+    data = Data(experiment_name, X_train, X_test, y_train, y_test)
+    save_to_cache(data, train_file, test_file)
 
     return data
 
@@ -69,23 +119,6 @@ ALREADY_SPLIT = {
     "msrank-classification",
     "epsilon"
 }
-
-
-class Data:
-    def __init__(self, data_loader, name, dataset_dir):
-        self.name = name
-
-        X, y = data_loader(dataset_dir)
-
-        if self.name in ALREADY_SPLIT:
-            self.X_train = X[0]
-            self.y_train = y[0]
-
-            self.X_test = X[1]
-            self.y_test = y[1]
-        else:
-            self.X_train, self.X_test, self.y_train, self.y_test = \
-                train_test_split(X, y, test_size=DEFAULT_TEST_SIZE, random_state=0)
 
 
 def read_libsvm(file_obj, n_samples, n_features):
