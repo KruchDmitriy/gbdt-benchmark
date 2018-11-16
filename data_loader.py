@@ -47,13 +47,17 @@ Data = namedtuple("Data", ["name", "X_train", "X_test", "y_train", "y_test"])
 
 def get_from_cache(experiment_name, train_file, test_file):
     print('loading train')
-    train = np.loadtxt(train_file, delimiter='\t')
+    train = np.fromfile(train_file, sep='\t')
+
+    n_features = DATASET_CHARACTERISTIC[experiment_name][1] + 1
+    train = train.reshape((train.shape[0] / n_features, n_features))
 
     X_train = train[:, 1:]
     y_train = train[:, 0]
 
     print('loading test')
-    test = np.loadtxt(test_file, delimiter='\t')
+    test = np.fromfile(test_file, sep='\t')
+    test = test.reshape((test.shape[0] / n_features, n_features))
 
     X_test = test[:, 1:]
     y_test = test[:, 0]
