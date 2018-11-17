@@ -11,6 +11,8 @@ from log_parser import read_results
 
 
 def calculate_statistics(tracks, niter):
+    niter -= 1
+
     best_track = None
     best_quality = np.inf
     best_iter = -1
@@ -23,7 +25,7 @@ def calculate_statistics(tracks, niter):
     for track in tracks:
         cur_quality = track.get_best_score()
         time_per_iter = track.get_time_per_iter()
-        if time_per_iter.shape[0] <= niter:
+        if time_per_iter.shape[0] < niter:
             continue
 
         median.append(np.median(time_per_iter))
