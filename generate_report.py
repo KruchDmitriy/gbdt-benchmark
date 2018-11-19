@@ -59,22 +59,19 @@ def calculate_statistics(tracks, niter):
     }
 
 
-def get_experiment_stats(results_directory, gpu, niter):
-    EXPERIMENT_NAMES = EXPERIMENT_TYPE.keys()
+def get_experiment_stats(results_file, gpu, niter):
     stats = {}
+    tracks = read_results(results_file)
 
-    for experiment_name in os.listdir(results_directory):
-        if experiment_name not in EXPERIMENT_NAMES:
-            continue
-
+    for experiment_name in tracks.iterkeys():
         stats[experiment_name] = {}
 
-        tracks = read_results(os.path.join(results_directory, experiment_name))
-        tracks = dict(filter(lambda track: gpu == ('GPU' in track[0]), tracks.items()))
+        experiment_tracks = tracks[experiment_name]
+        experiment_tracks = dict(filter(lambda track: gpu == ('GPU' in track[0]), experiment_tracks.items()))
 
-        for algorithm_name in tracks.iterkeys():
+        for algorithm_name in experiment_tracks.iterkeys():
             stats[experiment_name][algorithm_name] = {}
-            table_tracks = split_tracks(tracks[algorithm_name])
+            table_tracks = split_tracks(experiment_tracks[algorithm_name])
 
             for params, cur_tracks in table_tracks.iteritems():
                 stat = calculate_statistics(cur_tracks, niter)

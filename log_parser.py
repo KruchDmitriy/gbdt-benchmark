@@ -1,9 +1,10 @@
 import numpy as np
 import os
+import json
 import re
 
 from collections import namedtuple
-from experiments import EXPERIMENTS, track_hash
+from experiments import EXPERIMENT_TYPE
 
 ALGORITHMS = [method + '-' + device_type
               for device_type in ['CPU', 'GPU']
@@ -185,41 +186,65 @@ def parse_log(algorithm_name, experiment_name, task_type, params_str, file_name,
                  np.array(time_series), np.array(values), duration)
 
 
-def read_results(dir_name):
-    experiment_name = os.path.basename(dir_name.rstrip(os.path.sep))
-    task_type = filter(lambda experiment: experiment.name == experiment_name, EXPERIMENTS.itervalues())[0].task
-    print(experiment_name + ' ' + task_type)
+def read_results(results_file):
+    with open(results_file, 'r') as f:
+        results_json = json.load(f)
 
+    results = results_json.values()
+
+    tracks = {}
+
+    for result in results:
+        experiment_name = result["dataset"]
+        algorithm_name = result["algorithm_name"]
+
+        if experiment_name not in tracks:
+            tracks[experiment_name] = {}
+        if algorithm_name not in tracks[experiment_name]:
+            tracks[experiment_name][algorithm_name] = []
+
+        track = Track(algorithm_name, experiment_name, result["task_type"], result["parameters"],
+                      result["time_series"], result["scores"], result["duration"])
+
+        tracks[experiment_name][algorithm_name].append(track)
+
+    return tracks
+
+
+def read_log_results(dir_name):
     results = {}
 
-    for algorithm_name in os.listdir(dir_name):
-        print(algorithm_name)
-        if algorithm_name not in ALGORITHMS:
-            continue
+    for experiment_name in os.listdir(dir_name):
+        experiment_dir_name = os.path.join(dir_name, experiment_name)
+        task_type = filter(lambda experiment: experiment.name == experiment_name, EXPERIMENT_TYPE.itervalues())[0].task
+        print(experiment_name + ' ' + task_type)
 
-        results[algorithm_name] = []
+        results[experiment_name] = {}
 
-        cur_dir = os.path.join(dir_name, algorithm_name)
-        for log_name in os.listdir(cur_dir):
-            path = os.path.join(cur_dir, log_name)
-
-            iterations_str = re.findall(r'iterations\[(\d+)\]', log_name)
-
-            if not os.path.isfile(path) or len(iterations_str) != 1:
+        for algorithm_name in os.listdir(experiment_dir_name):
+            print(algorithm_name)
+            if algorithm_name not in ALGORITHMS:
                 continue
 
-            params_str = log_name.rstrip('.log')
-            iterations = int(iterations_str[0])
-            try:
-                track = parse_log(algorithm_name, experiment_name, task_type, params_str, path, iterations)
-            except Exception as e:
-                print('Log for ' + path + ' is broken: ' + repr(e))
-                continue
+            results[experiment_name][algorithm_name] = []
 
-            results[algorithm_name].append(track)
+            cur_dir = os.path.join(experiment_dir_name, algorithm_name)
+            for log_name in os.listdir(cur_dir):
+                path = os.path.join(cur_dir, log_name)
+
+                iterations_str = re.findall(r'iterations\[(\d+)\]', log_name)
+
+                if not os.path.isfile(path) or len(iterations_str) != 1:
+                    continue
+
+                params_str = log_name.rstrip('.log')
+                iterations = int(iterations_str[0])
+                try:
+                    track = parse_log(algorithm_name, experiment_name, task_type, params_str, path, iterations)
+                except Exception as e:
+                    print('Log for ' + path + ' is broken: ' + repr(e))
+                    continue
+
+                results[experiment_name][algorithm_name].append(track)
 
     return results
-
-
-def params_to_str(params):
-    return ''.join(map(lambda (key, value): '{}[{}]'.format(key, str(value)), params.items()))

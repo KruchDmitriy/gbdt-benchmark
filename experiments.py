@@ -4,7 +4,7 @@ import os
 from sklearn.model_selection import ParameterGrid
 
 from data_loader import get_dataset
-from log_parser import parse_log, params_to_str, Track
+from log_parser import parse_log, Track
 
 
 def check_exists(hash_id, result_file):
@@ -113,3 +113,7 @@ EXPERIMENTS = {
     name: Experiment(name, experiment_type[0], experiment_type[1])
     for name, experiment_type in EXPERIMENT_TYPE.iteritems()
 }
+
+
+def params_to_str(params):
+    return ''.join(map(lambda (key, value): '{}[{}]'.format(key, str(value)), params.items()))
