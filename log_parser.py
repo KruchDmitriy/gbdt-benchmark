@@ -90,8 +90,8 @@ class Track:
                 "algorithm_name": self.algorithm_name,
                 "task_type": self.task_type,
                 "parameters": self.parameters_str,
-                "scores": self.scores,
-                "time_series": self.time_series,
+                "scores": list(self.scores),
+                "time_series": list(self.time_series),
                 "duration": self.duration
             }
         }

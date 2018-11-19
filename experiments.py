@@ -27,7 +27,7 @@ def update_result_file(track, result_file):
 
     backup_result_file = result_file + '.bkp'
     with open(backup_result_file, 'w') as f:
-        json.dump(f, results, indent=4)
+        json.dump(results, f, indent=4)
 
     os.rename(backup_result_file, result_file)
 
