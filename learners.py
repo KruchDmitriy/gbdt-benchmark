@@ -1,15 +1,14 @@
-import catboost as cat
-import lightgbm as lgb
-import numpy as np
 import os
 import sys
 import time
-import xgboost as xgb
-
 from copy import deepcopy
 from datetime import datetime
-from sklearn.metrics import mean_squared_error, accuracy_score
 
+import catboost as cat
+import lightgbm as lgb
+import numpy as np
+import xgboost as xgb
+from sklearn.metrics import mean_squared_error, accuracy_score
 
 RANDOM_SEED = 0
 
@@ -49,19 +48,6 @@ class Logger:
 
         sys.stdout = self.stdout
         self.file.close()
-
-
-def _params_to_str(params):
-    return ''.join(map(lambda (key, value): '{}[{}]'.format(key, str(value)), params.items()))
-
-
-def check_log(log_file):
-    print('Checking log')
-    if os.path.exists(log_file):
-        with open(log_file, 'r') as f:
-            lines = f.readlines()
-            return len(lines) > 0 and 'Elapsed: ' in lines[-1]
-    return False
 
 
 def eval_metric(data, prediction):
@@ -105,20 +91,15 @@ class Learner:
     def set_train_dir(self, params, path):
         pass
 
-    def run(self, params, log_dir_name):
+    def run(self, params, log_filename):
+        log_dir_name = os.path.dirname(log_filename)
+
         if not os.path.exists(log_dir_name):
             os.makedirs(log_dir_name)
 
-        path = os.path.join(log_dir_name, _params_to_str(params))
-        filename = os.path.join(path + '.log')
+        self.set_train_dir(params, log_dir_name)
 
-        if check_log(filename):
-            print('Skipping experiment, reason: log already exists and is consistent')
-            return 0
-
-        self.set_train_dir(params, path)
-
-        with Logger(filename):
+        with Logger(log_filename):
             start = time.time()
             self._fit(params)
             elapsed = time.time() - start

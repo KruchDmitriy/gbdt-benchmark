@@ -122,7 +122,7 @@ Table with dataset characteristics. Sparsity values was calculated using the for
 |Synthetic (10M samples, 100 features)|5000      |[6, 8, 10] |[.05, .15]               |default          |default      |
 |Synthetic (100K samples, 5K features)|1000      |[6, 8]     |[.05]                    |default          |default      |
 
-Table of quality values. Metric abbreviations: RMSE -- root mean squared error. Error -- $ # incorrect classified samples / # samples $.
+Table of quality values. Metric abbreviations: RMSE -- root mean squared error. Error = # incorrect classified samples / # samples.
 
 |Dataset                              | Metric|CatBoost|XGBoost|LightGBM|
 |-------------------------------------|-------|--------|-------|--------|
