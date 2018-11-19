@@ -202,14 +202,16 @@ class LightGBMLearner(Learner):
         return 'lightgbm'
 
     def _fit(self, tunable_params):
-        if 'max_depth' in tunable_params:
-            tunable_params['num_leaves'] = 2 ** tunable_params['max_depth']
-            del tunable_params['max_depth']
+        params_copy = deepcopy(tunable_params)
 
-        num_iterations = tunable_params['iterations']
-        del tunable_params['iterations']
+        if 'max_depth' in params_copy:
+            params_copy['num_leaves'] = 2 ** params_copy['max_depth']
+            del params_copy['max_depth']
 
-        params = Learner._fit(self, tunable_params)
+        num_iterations = params_copy['iterations']
+        del params_copy['iterations']
+
+        params = Learner._fit(self, params_copy)
         self.learner = lgb.train(
             params,
             self.train,
