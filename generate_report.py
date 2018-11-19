@@ -1,12 +1,10 @@
 # coding=utf-8
 import argparse
 import json
-import os
 
 import numpy as np
 import pandas as pd
 
-from experiments import EXPERIMENT_TYPE
 from log_parser import read_results
 
 

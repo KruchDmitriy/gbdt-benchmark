@@ -97,7 +97,7 @@ class Learner:
         if not os.path.exists(log_dir_name):
             os.makedirs(log_dir_name)
 
-        self.set_train_dir(params, log_dir_name)
+        self.set_train_dir(params, log_filename + 'dir')
 
         with Logger(log_filename):
             start = time.time()
