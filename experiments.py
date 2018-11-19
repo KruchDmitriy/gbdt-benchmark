@@ -14,7 +14,8 @@ def check_exists(hash_id, result_file):
         return False
 
     with open(result_file, 'r') as f:
-        return hash_id in json.load(f)
+        content = json.load(f)
+        return str(hash_id) in content
 
 
 def update_result_file(track, result_file):

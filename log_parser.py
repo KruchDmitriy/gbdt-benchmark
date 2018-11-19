@@ -44,10 +44,7 @@ class Track:
         self.time_series = time_series
         assert(np.all(self.time_series - self.time_series[0] >= 0.))
 
-        time_per_iter = time_series[1:] - time_series[:-1]
-        # remove outliers
-        ids = np.where(time_per_iter < np.quantile(time_per_iter, 0.99))
-        self.time_per_iter = time_per_iter[ids]
+        self.time_per_iter = time_series[1:] - time_series[:-1]
 
         params = Track.param_regex.findall(parameters_str)
 

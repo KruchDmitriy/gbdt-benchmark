@@ -205,7 +205,6 @@ def split_tracks(tracks):
     samples = set(samples)
 
     table_tracks = {(depth, subsample): [] for depth in depths for subsample in samples}
-    print(table_tracks)
 
     for track in tracks:
         subsample = track.params.subsample if "subsample" in track.params_dict.keys() else 1.
@@ -216,7 +215,7 @@ def split_tracks(tracks):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('-i', '--results-dir', default='./results')
+    parser.add_argument('-i', '--result', default='./results.json')
     parser.add_argument('-o', '--output')
     parser.add_argument('-t', '--type', choices=['common-table', 'by-depth-table', 'json'], default='common-table')
     parser.add_argument('-f', '--filter', choices=['only-gpu', 'only-cpu'], default='only-gpu')
@@ -225,7 +224,7 @@ def main():
     args = parser.parse_args()
 
     on_gpu = args.filter == 'only-gpu'
-    stats = get_experiment_stats(args.results_dir, on_gpu, niter=args.niter)
+    stats = get_experiment_stats(args.result, on_gpu, niter=args.niter)
 
     output = args.output
     if args.output is None:
