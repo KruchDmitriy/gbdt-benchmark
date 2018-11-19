@@ -8,21 +8,21 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--use-gpu', action='store_true')
     parser.add_argument('--datasets', default='datasets')
-    parser.add_argument('--iterations', default=1000, type=int)
+    parser.add_argument('--iterations', default=10, type=int)
     parser.add_argument('--result', default='result.json')
     parser.add_argument('--table', default='common-table.txt')
     args = parser.parse_args()
 
     experiments_names = [
         'abalone',
-        'airline',
-        'epsilon',
-        'higgs',
-        'letters',
-        'msrank',
-        'msrank-classification',
-        'synthetic',
-        'synthetic-5k-features'
+    #    'airline',
+    #    'epsilon',
+    #    'higgs',
+    #    'letters',
+    #    'msrank',
+    #    'msrank-classification',
+    #    'synthetic',
+    #    'synthetic-5k-features'
     ]
 
     learners = [
@@ -35,7 +35,7 @@ def main():
     logs_dir = 'logs'
 
     params_grid = {
-        "iterations": [iterations],
+        'iterations': [iterations],
         'max_depth': [6],
         'learning_rate': [0.03, 0.07, 0.15]
     }
@@ -46,7 +46,7 @@ def main():
         experiment.run(args.use_gpu, learners, params_grid, args.datasets, args.result, logs_dir)
 
     stats = get_experiment_stats(args.result, args.use_gpu, niter=iterations)
-    print_all_in_one_table(stats, args.use_gpu, params=args.params, output=args.table)
+    print_all_in_one_table(stats, args.use_gpu, params={'max_depth': 6}, output=args.table)
 
 
 if __name__ == "__main__":

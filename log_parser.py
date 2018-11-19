@@ -154,7 +154,7 @@ def parse_log(algorithm_name, experiment_name, task_type, params_str, file_name,
     algorithm = algorithm_name.rstrip('-CPU|GPU')
 
     if algorithm == 'catboost':
-        catboost_train_dir = os.path.splitext(file_name)[0]
+        catboost_train_dir = file_name + 'dir'
         test_error_file = os.path.join(catboost_train_dir, 'test_error.tsv')
         values = parse_catboost_log(test_error_file, task_type, iterations)
 
@@ -203,7 +203,7 @@ def read_results(results_file):
             tracks[experiment_name][algorithm_name] = []
 
         track = Track(algorithm_name, experiment_name, result["task_type"], result["parameters"],
-                      result["time_series"], result["scores"], result["duration"])
+                      np.array(result["time_series"]), np.array(result["scores"]), result["duration"])
 
         tracks[experiment_name][algorithm_name].append(track)
 

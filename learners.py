@@ -263,6 +263,8 @@ class CatBoostLearner(Learner):
         self.model.fit(self.train, eval_set=self.test, verbose_eval=True)
 
     def set_train_dir(self, params, path):
+        if not os.path.exists(path):
+            os.makedirs(path)
         params["train_dir"] = path
 
     def predict(self, n_tree):
