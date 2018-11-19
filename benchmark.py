@@ -9,7 +9,7 @@ def main():
     parser.add_argument('--use-gpu', action='store_true')
     parser.add_argument('--datasets', default='datasets')
     parser.add_argument('--iterations', default=1000, type=int)
-    parser.add_argument('--results', default='results')
+    parser.add_argument('--result', default='result.json')
     parser.add_argument('--table', default='common-table.txt')
     args = parser.parse_args()
 
@@ -32,9 +32,7 @@ def main():
     ]
 
     iterations = args.iterations
-
-    datasets_dir = args.datasets
-    results_dir = args.results
+    logs_dir = 'logs'
 
     params_grid = {
         "iterations": [iterations],
@@ -45,9 +43,9 @@ def main():
     for experiment_name in experiments_names:
         print(experiment_name)
         experiment = EXPERIMENTS[experiment_name]
-        experiment.run(args.use_gpu, learners, params_grid, datasets_dir, results_dir)
+        experiment.run(args.use_gpu, learners, params_grid, args.datasets, args.result, logs_dir)
 
-    stats = get_experiment_stats(args.results_dir, args.use_gpu, niter=iterations)
+    stats = get_experiment_stats(args.result, args.use_gpu, niter=iterations)
     print_all_in_one_table(stats, args.use_gpu, params=args.params, output=args.table)
 
 

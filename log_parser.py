@@ -1,10 +1,9 @@
-import numpy as np
-import os
 import json
+import os
 import re
-
 from collections import namedtuple
-from experiments import EXPERIMENT_TYPE
+
+import numpy as np
 
 ALGORITHMS = [method + '-' + device_type
               for device_type in ['CPU', 'GPU']
