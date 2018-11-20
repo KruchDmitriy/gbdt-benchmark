@@ -19,17 +19,19 @@ It measures time to perform boosting iteration and metric's value on test set us
 # TL;DR 
 
 How to run all experiments in one line and get table with results. 
-It will run each library on each dataset (from directory datasets) with max_depth=6 three times 
-(with learning rate 0.03, 0.05 and 0.15) for 1000 iterations, dump logs to directory results and write 
-table with time per iteration and total learning time to common-table.txt.
+It will run each library on each dataset (from list: abalone, airline, epsilon, higgs, letters, 
+msrank, msrank-classification, synthetic, synthetic-5k-features) with max_depth=6 three times 
+(with learning rate 0.03, 0.05 and 0.15) for 1000 iterations, dump logs to directory 'logs' write all results to file 
+result.json and create table with time per iteration and total learning time (in common-table.txt).
 
     python benchmark.py --use-gpu
 
 For CPU benchmark run without --use-gpu flag.
 
-# Run benchmark
+# Run benchmark (how to define your own benchmark parameters)
 
-First of all you need to define a hyperparameters grid in json file, (you may find grid example in the root directory named example_params_grid.json)
+First of all you need to define a hyperparameters grid in json file, (you may find grid example in the root directory 
+named example_params_grid.json)
 
 Here every line define a hyperparameter name and a list of values to iterate in experiments.
 
@@ -40,12 +42,23 @@ Here every line define a hyperparameter name and a list of values to iterate in 
         "subsample": [0.5, 1.0]
     }
 
-This is example of how you can run an experiments on GPU for all three libraries for dataset airline using grid ''example_params_grid.json'' with 5000 iterations.
+This is example of how you can run an experiments on GPU for all three libraries for dataset airline using grid 
+''example_params_grid.json'' with 5000 iterations.
 
     python run.py --learners cat lgb xgb --experiment airline --params-grid example_params_grid.json --iterations 5000 --use-gpu
 
+Logs by default will be written to directory 'logs', its compressed version (containing only timestamps and quality 
+values on iteration) will be written to file 'result.json'.
+
 # Supported datasets
-[Higgs](https://archive.ics.uci.edu/ml/datasets/HIGGS), [Epsilon](https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/binary/), [MSRank (MSLR-WEB10K)](https://www.microsoft.com/en-us/research/project/mslr/), [CoverType](https://archive.ics.uci.edu/ml/datasets/covertype), [Airline](http://kt.ijs.si/elena_ikonomovska/data.html), [Synthetic](http://scikit-learn.org/stable/modules/generated/sklearn.datasets.make_regression.html), [Abalone](https://archive.ics.uci.edu/ml/machine-learning-databases/abalone), [Letters](http://archive.ics.uci.edu/ml/datasets/Letter+Recognition).
+[Higgs](https://archive.ics.uci.edu/ml/datasets/HIGGS), 
+[Epsilon](https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/binary/), 
+[MSRank (MSLR-WEB10K)](https://www.microsoft.com/en-us/research/project/mslr/), 
+[CoverType](https://archive.ics.uci.edu/ml/datasets/covertype), 
+[Airline](http://kt.ijs.si/elena_ikonomovska/data.html), 
+[Synthetic](http://scikit-learn.org/stable/modules/generated/sklearn.datasets.make_regression.html), 
+[Abalone](https://archive.ics.uci.edu/ml/machine-learning-databases/abalone), 
+[Letters](http://archive.ics.uci.edu/ml/datasets/Letter+Recognition).
 
 Names for script run.py:
 
@@ -58,24 +71,28 @@ It is supported to draw four types of plots:
 3. Draw time to achieve percent from best quality (*quality-vs-time*).
 4. Learning curves for concrete experiments (*custom*).
 
-Third method calculates the best achieved quality between all experiments. Then fix a grid of relative percents of this value. Then for each level of quality the method filter all experiments from grid search that reach it and compute median (circle point), minimum and maximum time when algorithm achieved that score.
+Third method calculates the best achieved quality between all experiments. 
+Then fix a grid of relative percents of this value. 
+Then for each level of quality the method filter all experiments from grid search that reach it 
+and compute median (circle point), minimum and maximum time when algorithm achieved that score.
 
 #### Examples
 Draw learning curves for 5 best experiments on dataset MSRank (multiclass mode):
 
-    python plot.py --type best --top 5 --from-iter 500 -i ./results/MSRank-MultiClass/ -o msrank_mc_plots
+    python plot.py --type best --top 5 --from-iter 500 -i result.json -o msrank_mc_plots
 
 Draw time curves with figure size 10x8 for experiments on Higgs dataset starting from 85% of best achieved quality to 100% in 30 points:
 
-    python plot.py --type quality-vs-time -f 10 8 -o higgs_plots -i ./results/Higgs/ --low-percent 0.85 --num-bins 30
+    python plot.py --type quality-vs-time -f 10 8 -o higgs_plots -i result.json --low-percent 0.85 --num-bins 30
 
 You can pass option *--only-min* in this mode, to draw only minimum time to achive percent of quality.
 
 Draw time per iteration box plots for every library:
 
-    python plot.py --type time-per-iter -f 10 8 -o higgs_plots -i ./results/Higgs
+    python plot.py --type time-per-iter -f 10 8 -o higgs_plots -i result.json
 
-If you want to draw experiments of concrete method pass option *--only method_name*. Choices for method_name are cat, xgb, lgb, cpu, gpu and combinations of those.
+If you want to draw experiments of concrete method pass option *--only method_name*. Choices for method_name are 
+cat, xgb, lgb, cpu, gpu and combinations of those.
 
 # Experiments
 
@@ -85,7 +102,11 @@ Hardware for CPU experiments: Intel Xeon E312xx (Sandy Bridge) (32 cores).
 
 We took the most popular datasets between benchmarks in other libraries and kaggle competitions.
 Datasets present different task types (regression, classification, ranking), and have different sparsity number of features and samples.
-This set of datasets cover the majority of computation bottlenecks in gbdt algorithm, for example with large number of samples computation of loss function gradients may become bottleneck, with large number of features the phase of searching of the tree structure may become computational bottleneck. To demonstrate performance of each library in such experiments we created two synthetic datasets -- the first with 10 million objects and 100 features, the second with 100K objects and 5K features.
+This set of datasets cover the majority of computation bottlenecks in gbdt algorithm, for example with 
+large number of samples computation of loss function gradients may become bottleneck, with large number of features 
+the phase of searching of the tree structure may become computational bottleneck. To demonstrate performance of each 
+library in such experiments we created two synthetic datasets -- the first with 10 million objects and 100 features, 
+the second with 100K objects and 5K features.
 
 In such different tasks the optimal hyper parameters, for example maximal tree depth or learning rate, will be different.
 Thus we choose different hyper parameter grids for different datasets.
@@ -97,7 +118,9 @@ The selection of the grid for optimization consisted of the following steps:
 
 Learning curves, distribution of time per iteration and other plots you may find in [plots](./plots) folder.
 
-Table with dataset characteristics. Sparsity values was calculated using the formula `sparsity = (100 - 100 * float(not_null_count) / (pool.shape[0] * pool.shape[1]))`, where `not_null_count` is number of NaN, None or zero (abs(x) < 1e-6) values in dataset.
+Table with dataset characteristics. Sparsity values was calculated using the formula 
+`sparsity = (100 - 100 * float(not_null_count) / (pool.shape[0] * pool.shape[1]))`, where `not_null_count` 
+is number of NaN, None or zero (abs(x) < 1e-6) values in dataset.
 
 |Dataset characteristics              |\#samples   |\#features|sparsity|
 |-------------------------------------|------------|----------|--------|

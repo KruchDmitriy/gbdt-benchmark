@@ -8,7 +8,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--use-gpu', action='store_true')
     parser.add_argument('--datasets', default='datasets')
-    parser.add_argument('--iterations', default=100, type=int)
+    parser.add_argument('--iterations', default=1000, type=int)
     parser.add_argument('--result', default='result.json')
     parser.add_argument('--table', default='common-table.txt')
     args = parser.parse_args()
