@@ -55,7 +55,7 @@ def plot_quality(tracks, from_iter, to_iter, figsize=FIGURE_SIZE, title=None, sa
 
     first_track = flat_tracks[0]
     task_type = first_track.task_type
-    metric = 'Error' if task_type == 'Classification' or task_type == 'Multiclass' else 'RMSE'
+    metric = 'Error' if task_type == 'binclass' or task_type == 'multiclass' else 'RMSE'
 
     plt.xlabel('iteration', FONT_DICT)
     plt.ylabel(metric, FONT_DICT)
