@@ -78,6 +78,8 @@ EXPERIMENT_TYPE = {
         ["binclass", "Accuracy"],
     "airline-one-hot":
         ["binclass", "Accuracy"],
+    "aloi":
+        ["multiclass", "Accuracy"],
     "bosch":
         ["binclass", "Accuracy"],
     "cover-type":

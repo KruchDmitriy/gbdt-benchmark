@@ -1,8 +1,6 @@
 """Module for loading preprocessed datasets for machine learning problems"""
 import bz2
 import os
-import re
-import gc
 import sys
 import tarfile
 
@@ -26,6 +24,7 @@ DATASET_CHARACTERISTIC = {
     "abalone": (4177, 8),
     "airline": (115000000, 13),
     "airline-one-hot": (10100000, 700),
+    "aloi": (108000, 128),
     "bosch": (1184000, 968),
     "cover-type": (581012, 54),
     "epsilon": (500000, 2000),
@@ -119,44 +118,6 @@ ALREADY_SPLIT = {
     "msrank-classification",
     "epsilon"
 }
-
-
-def read_libsvm(file_obj, n_samples, n_features):
-    X = np.zeros((n_samples, n_features))
-    y = np.zeros((n_samples,))
-
-    counter = 0
-
-    regexp = re.compile(r'[A-Za-z0-9]+:(-?\d*\.?\d+)')
-
-    for line in file_obj:
-        line = regexp.sub('\g<1>', line)
-        line = line.rstrip(" \n\r").split(' ')
-
-        y[counter] = int(line[0])
-        X[counter] = map(float, line[1:])
-        if counter < 5:
-            print(y)
-            print(X[counter])
-
-        counter += 1
-
-    assert counter == n_samples
-
-    return np.array(X, dtype=np.float32), np.array(y, dtype=np.int)
-
-
-def _make_gen(reader):
-    b = reader(1024 * 1024)
-    while b:
-        yield b
-        b = reader(1024 * 1024)
-
-
-def _count_lines(filename):
-    with open(filename, 'rb') as f:
-        f_gen = _make_gen(f.read)
-        return sum(buf.count(b'\n') for buf in f_gen)
 
 
 def abalone(dataset_dir):
@@ -271,6 +232,29 @@ def airline_one_hot(dataset_dir):
     return sets, labels
 
 
+def aloi(dataset_dir):
+    """
+    TaskType:multiclass
+    NumberOfClasses:1000
+    NumberOfFeatures:128
+    NumberOfInstances:108,000
+    """
+
+    url = 'https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/multiclass/aloi.bz2'
+    file_name = os.path.join(dataset_dir, 'aloi.bz2')
+
+    if not os.path.exists(file_name):
+        urlretrieve(url, file_name)
+
+    with bz2.BZ2File(file_name, 'r') as f:
+        X, y = datasets.load_svmlight_file(f, n_features=128)
+        X = X.A
+
+        assert X.shape[0] == 108e3
+
+    return X, y
+
+
 def bosch(dataset_dir):
     """
     Bosch Production Line Performance data set (
@@ -359,7 +343,9 @@ def epsilon(dataset_dir):
             n_samples = 100000
 
         with bz2.BZ2File(filename, 'r') as f:
-            x, y = read_libsvm(f, n_samples=n_samples, n_features=2000)
+            x, y = datasets.load_svmlight_file(f, n_features=2000)
+            x = x.A
+            assert x.shape[0] == n_samples
 
             y[y <= 0] = 0
             y[y > 0] = 1
@@ -466,10 +452,8 @@ def msrank(dataset_dir):
 
     for set_name in ['train.txt', 'vali.txt', 'test.txt']:
         file_name = os.path.join(dirname, set_name)
-
-        n_samples = _count_lines(file_name)
-        with open(file_name, 'r') as file_obj:
-            X, y = read_libsvm(file_obj, n_samples, n_features)
+        X, y = datasets.load_svmlight_file(file_name, n_features=n_features)
+        X = X.A
 
         sets.append(X)
         labels.append(y)
@@ -555,6 +539,7 @@ DATA_LOADERS = {
     "abalone": abalone,
     "airline": airline,
     "airline-one-hot": airline_one_hot,
+    "aloi": aloi,
     "bosch": bosch,
     "cover-type": cover_type,
     "epsilon": epsilon,

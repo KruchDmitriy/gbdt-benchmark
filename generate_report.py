@@ -1,11 +1,14 @@
 # coding=utf-8
 import argparse
 import json
+import os
+import re
 
 import numpy as np
 import pandas as pd
 
-from log_parser import read_results
+from log_parser import read_results, parse_log, ALGORITHMS
+from experiments import EXPERIMENT_TYPE
 
 
 def calculate_statistics(tracks, niter):
@@ -57,9 +60,13 @@ def calculate_statistics(tracks, niter):
     }
 
 
-def get_experiment_stats(results_file, gpu, niter):
+def get_experiment_stats(results, gpu, niter):
     stats = {}
-    tracks = read_results(results_file)
+
+    if os.path.isdir(results):
+        tracks = json_from_logs(results)
+    else:
+        tracks = read_results(results)
 
     for experiment_name in tracks.iterkeys():
         stats[experiment_name] = {}
@@ -76,6 +83,8 @@ def get_experiment_stats(results_file, gpu, niter):
                 if stat == {}:
                     continue
                 stats[experiment_name][algorithm_name][params] = stat
+
+    stats = dict(filter(lambda experiment_stat: len(experiment_stat[1]) > 0, stats.items()))
 
     return stats
 
@@ -213,14 +222,90 @@ def split_tracks(tracks):
     return table_tracks
 
 
+def json_from_logs(dir_name):
+    results = {}
+    for experiment_name in os.listdir(dir_name):
+        if experiment_name not in EXPERIMENT_TYPE.keys():
+            continue
+
+        experiment_dir_name = os.path.join(dir_name, experiment_name)
+        task_type = EXPERIMENT_TYPE[experiment_name][0]
+        print(experiment_name + ' ' + task_type)
+        results[experiment_name] = {}
+        for algorithm_name in os.listdir(experiment_dir_name):
+            print(algorithm_name)
+            if algorithm_name not in ALGORITHMS:
+                continue
+
+            results[experiment_name][algorithm_name] = []
+            cur_dir = os.path.join(experiment_dir_name, algorithm_name)
+            for log_name in os.listdir(cur_dir):
+                path = os.path.join(cur_dir, log_name)
+                iterations_str = re.findall(r'iterations\[(\d+)\]', log_name)
+                if not os.path.isfile(path) or len(iterations_str) != 1:
+                    continue
+                params_str = log_name.rstrip('.log')
+                iterations = int(iterations_str[0])
+                try:
+                    track = parse_log(algorithm_name, experiment_name, task_type, params_str, path, iterations)
+                except Exception as e:
+                    print('Log for ' + path + ' is broken: ' + repr(e))
+                    continue
+                results[experiment_name][algorithm_name].append(track)
+    return results
+
+
+def print_n_experiment_duration(results, gpu, n, output):
+    niter = 5000
+
+    if os.path.isdir(results):
+        tracks = json_from_logs(results)
+    else:
+        tracks = read_results(results)
+
+    table = []
+    index = []
+
+    for experiment_name in tracks.iterkeys():
+        experiment_tracks = tracks[experiment_name]
+        experiment_tracks = dict(filter(lambda track_: gpu == ('GPU' in track_[0]), experiment_tracks.items()))
+
+        row = []
+
+        for algorithm_name in sorted(experiment_tracks.iterkeys()):
+            value = 0.
+            if len(experiment_tracks[algorithm_name]) < 2:
+                continue
+
+            for track in experiment_tracks[algorithm_name]:
+                value += (np.median(track.time_per_iter) * niter) / 60.  # minutes
+
+            row.append(value / 60. / float(len(experiment_tracks[algorithm_name])) * n)  # hours
+
+        if len(row) != 0:
+            index.append(experiment_name)
+            table.append(row)
+
+    header = ['catboost', 'lightgbm', 'xgboost']
+    table = pd.DataFrame(table, index=index, columns=header)
+
+    with open(output, 'w') as f:
+        f.write('Optimization time, hours')
+        f.write('\n')
+        f.write(table.to_string())
+        f.write('\n')
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('-i', '--result', default='./results.json')
     parser.add_argument('-o', '--output')
-    parser.add_argument('-t', '--type', choices=['common-table', 'by-depth-table', 'json'], default='common-table')
+    parser.add_argument('-t', '--type',
+                        choices=['common-table', 'by-depth-table', 'json', 'opt-time'],
+                        default='common-table')
     parser.add_argument('-f', '--filter', choices=['only-gpu', 'only-cpu'], default='only-gpu')
-    parser.add_argument('-p', '--params', default=(6.0, 1.0))
-    parser.add_argument('-niter', type=int, default=999)
+    parser.add_argument('-p', '--params', default=(8.0, 1.0))
+    parser.add_argument('--niter', type=int, default=999)
     args = parser.parse_args()
 
     on_gpu = args.filter == 'only-gpu'
@@ -245,6 +330,10 @@ def main():
         with open(output, 'w') as f:
             json.dump(stats, f)
 
+        return
+
+    if args.type == 'opt-time':
+        print_n_experiment_duration(results=args.result, gpu=on_gpu, n=50, output=output)
         return
 
 
